@@ -12,7 +12,6 @@ const TABS = [
   { key: 'attendance', label: 'Anwesenheit', icon: '📋' },
   { key: 'registrations', label: 'Anmeldungen', icon: '✅' },
   { key: 'work-hours', label: 'Stunden', icon: '📅' },
-  { key: 'trainer-hours', label: 'Meine Stunden', icon: '💼' },
   { key: 'awards', label: 'Awards', icon: '🏆' },
   { key: 'settings', label: 'Einstellungen', icon: '⚙️' },
 ];

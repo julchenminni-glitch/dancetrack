@@ -57,3 +57,17 @@ export const calcAge = (birthday) => {
   const diff = Date.now() - d.getTime();
   return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
 };
+
+export const formatDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
+};
+
+export const parseGermanDate = (str) => {
+  if (!str) return '';
+  const m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return str;
+};

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { useRouter } from 'expo-router';
 import { useApp } from '../../src/store';
 import { theme, fonts, getCurrentLevel, getNextLevel, WEEKDAYS } from '../../src/theme';
-import { Card, ProgressBar, EmptyState } from '../../src/ui';
+import { Card, EmptyState } from '../../src/ui';
 
 export default function Overview() {
   const router = useRouter();
@@ -20,9 +20,10 @@ export default function Overview() {
     .map((st) => {
       const count = studentAttendanceCount[st.id] || 0;
       const next = getNextLevel(count, rewardLevels);
+      const current = getCurrentLevel(count, rewardLevels);
       if (!next) return null;
       const diff = next.threshold - count;
-      return diff === 1 ? { student: st, next } : null;
+      return diff === 1 ? { student: st, next, current, count } : null;
     })
     .filter(Boolean);
 
@@ -31,43 +32,52 @@ export default function Overview() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 3);
 
-  // This week
   const today = new Date();
   const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
   startOfWeek.setHours(0, 0, 0, 0);
   const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 7);
   const weekEvents = events.filter((e) => { const d = new Date(e.date); return d >= startOfWeek && d < endOfWeek; });
 
+  const goStudent = (id) => router.push({ pathname: '/(tabs)/students', params: { openId: id } });
+
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Card style={s.stat}><Text style={s.statEmoji}>🎭</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{groups.length}</Text><Text style={s.statLabel}>Gruppen</Text></Card>
-        <Card style={s.stat}><Text style={s.statEmoji}>👥</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{students.length}</Text><Text style={s.statLabel}>Schüler</Text></Card>
-        <Card style={s.stat}><Text style={s.statEmoji}>💼</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{totalHours.toFixed(1)}</Text><Text style={s.statLabel}>Stunden</Text></Card>
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/groups')} testID="stat-groups-btn">
+          <Card style={s.stat}><Text style={s.statEmoji}>🎭</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{groups.length}</Text><Text style={s.statLabel}>Gruppen</Text></Card>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/students')} testID="stat-students-btn">
+          <Card style={s.stat}><Text style={s.statEmoji}>👥</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{students.length}</Text><Text style={s.statLabel}>Schüler</Text></Card>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/work-hours')} testID="stat-hours-btn">
+          <Card style={s.stat}><Text style={s.statEmoji}>💼</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{totalHours.toFixed(1)}</Text><Text style={s.statLabel}>Stunden</Text></Card>
+        </TouchableOpacity>
       </View>
 
       <Card>
         <Text style={[s.sectionTitle, { fontFamily: fonts.heading }]}>🎯 Level-Up wartet</Text>
         {nextLevelUps.length === 0 ? (
           <Text style={s.muted}>Keine Schüler kurz vor einem Level-Up</Text>
-        ) : nextLevelUps.slice(0, 5).map(({ student, next }) => (
-          <View key={student.id} style={s.lvlRow}>
+        ) : nextLevelUps.slice(0, 5).map(({ student, next, current }) => (
+          <TouchableOpacity key={student.id} style={s.lvlRow} onPress={() => goStudent(student.id)}>
+            <Text style={{ fontSize: 20 }}>{current?.emoji || '🌱'}</Text>
+            <Text style={{ fontSize: 14, color: theme.mutedText }}>→</Text>
             <Text style={{ fontSize: 20 }}>{next.emoji}</Text>
-            <Text style={[s.lvlName, { fontFamily: fonts.bodyBold }]}>{student.name}</Text>
-            <Text style={s.muted}>→ {next.name}</Text>
-          </View>
+            <Text style={[s.lvlName, { fontFamily: fonts.bodyBold }]} numberOfLines={1}>{student.name}</Text>
+            <Text style={s.muted}>{next.name}</Text>
+          </TouchableOpacity>
         ))}
       </Card>
 
       <Card>
         <Text style={[s.sectionTitle, { fontFamily: fonts.heading }]}>🏆 Top Achievers</Text>
         {topAchievers.length === 0 ? <Text style={s.muted}>Noch keine Schüler</Text> : topAchievers.map(({ st, count, lvl }, i) => (
-          <View key={st.id} style={s.lvlRow}>
+          <TouchableOpacity key={st.id} style={s.lvlRow} onPress={() => goStudent(st.id)} testID={`achiever-${st.id}`}>
             <Text style={{ fontSize: 18 }}>{['🥇', '🥈', '🥉'][i]}</Text>
             <Text style={[s.lvlName, { fontFamily: fonts.bodyBold }]}>{st.name}</Text>
             <Text style={{ fontSize: 18 }}>{lvl?.emoji || '🌱'}</Text>
             <Text style={s.muted}>{count}x</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </Card>
 
@@ -100,13 +110,13 @@ export default function Overview() {
 }
 
 const s = StyleSheet.create({
-  stat: { flex: 1, alignItems: 'center', padding: 14 },
+  stat: { alignItems: 'center', padding: 14 },
   statEmoji: { fontSize: 26, marginBottom: 4 },
   statNum: { fontSize: 24, color: theme.text },
   statLabel: { fontSize: 11, color: theme.mutedText, marginTop: 2, fontFamily: 'DMSans_400Regular' },
   sectionTitle: { fontSize: 17, color: theme.text, marginBottom: 10 },
   muted: { color: theme.mutedText, fontSize: 13, fontFamily: 'DMSans_400Regular' },
-  lvlRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  lvlRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
   lvlName: { flex: 1, color: theme.text, fontSize: 14 },
   weekDay: { fontSize: 13, color: theme.primary, marginTop: 4, marginBottom: 4 },
   weekItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 10 },

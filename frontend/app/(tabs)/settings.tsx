@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useApp } from '../../src/store';
 import { theme, fonts } from '../../src/theme';
@@ -9,12 +9,32 @@ export default function Settings() {
   const [sheet, setSheet] = useState(false);
   const [form, setForm] = useState({ name: '', emoji: '⭐', threshold: '1', phase: '' });
   const [trainerName, setTrainerName] = useState(currentWorkspace?.trainerName || '');
+  const [phaseNames, setPhaseNames] = useState({
+    knospe: currentWorkspace?.phaseNames?.knospe || 'Knospenphase',
+    bluete: currentWorkspace?.phaseNames?.bluete || 'Blütenphase',
+    glueck: currentWorkspace?.phaseNames?.glueck || 'Glückstierchenphase',
+  });
+
+  useEffect(() => {
+    if (currentWorkspace) {
+      setTrainerName(currentWorkspace.trainerName || '');
+      setPhaseNames({
+        knospe: currentWorkspace.phaseNames?.knospe || 'Knospenphase',
+        bluete: currentWorkspace.phaseNames?.bluete || 'Blütenphase',
+        glueck: currentWorkspace.phaseNames?.glueck || 'Glückstierchenphase',
+      });
+    }
+  }, [currentWorkspace]);
 
   const save = async () => {
     if (!form.name.trim()) return;
     await addLevel({ name: form.name, emoji: form.emoji, threshold: parseInt(form.threshold, 10) || 0, phase: form.phase });
     setSheet(false);
     setForm({ name: '', emoji: '⭐', threshold: '1', phase: '' });
+  };
+
+  const savePhases = async () => {
+    await updateWorkspace(currentWorkspace.id, { phaseNames });
   };
 
   return (
@@ -31,6 +51,19 @@ export default function Settings() {
       </Card>
 
       <Card>
+        <Text style={[s.t, { fontFamily: fonts.heading }]}>Phasen-Namen</Text>
+        <Text style={{ color: theme.mutedText, fontFamily: fonts.body, fontSize: 12, marginBottom: 8 }}>Werden in der Awards-Übersicht verwendet</Text>
+        <Text style={s.lbl}>Phase 1 (Standard: Knospenphase)</Text>
+        <Input testID="phase-knospe" value={phaseNames.knospe} onChangeText={(v) => setPhaseNames({ ...phaseNames, knospe: v })} />
+        <Text style={s.lbl}>Phase 2 (Standard: Blütenphase)</Text>
+        <Input testID="phase-bluete" value={phaseNames.bluete} onChangeText={(v) => setPhaseNames({ ...phaseNames, bluete: v })} />
+        <Text style={s.lbl}>Phase 3 (Standard: Glückstierchenphase)</Text>
+        <Input testID="phase-glueck" value={phaseNames.glueck} onChangeText={(v) => setPhaseNames({ ...phaseNames, glueck: v })} />
+        <View style={{ height: 10 }} />
+        <Btn title="Phasen speichern" onPress={savePhases} testID="save-phases-btn" />
+      </Card>
+
+      <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <Text style={[s.t, { fontFamily: fonts.heading }]}>Belohnungs-Levels</Text>
           <Btn small title="+ Neu" onPress={() => setSheet(true)} testID="add-level-btn" />
@@ -40,7 +73,7 @@ export default function Settings() {
             <Text style={{ fontSize: 22 }}>{lvl.emoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={[s.lvlName, { fontFamily: fonts.bodyBold }]}>{lvl.name}{lvl.isDefault ? ' (Standard)' : ''}</Text>
-              <Text style={s.lvlSub}>Ab {lvl.threshold} Trainings</Text>
+              <Text style={s.lvlSub}>Ab {lvl.threshold} Trainings{lvl.phase ? ` • ${lvl.phase}` : ''}</Text>
             </View>
             {!lvl.isDefault ? (
               <TouchableOpacity onPress={() => Alert.alert('Löschen?', '', [{ text: 'Abbrechen' }, { text: 'Ja', style: 'destructive', onPress: () => deleteLevel(lvl.id) }])}>

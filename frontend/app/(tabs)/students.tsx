@@ -1,77 +1,152 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../src/store';
-import { theme, fonts, getCurrentLevel, calcAge } from '../../src/theme';
-import { Btn, Input, Sheet, Card, Chip, EmptyState, Avatar } from '../../src/ui';
+import { theme, fonts, getCurrentLevel, getNextLevel, calcAge, formatDate, parseGermanDate } from '../../src/theme';
+import { Btn, Input, Sheet, Card, Chip, EmptyState, Avatar, ProgressBar } from '../../src/ui';
 
 const empty = { name: '', birthday: '', phone: '', photoUrl: '', groupId: '', isRegistered: false };
 
 export default function Students() {
+  const params = useLocalSearchParams();
   const { students, groups, attendance, rewardLevels, addStudent, editStudent, deleteStudent } = useApp();
   const [sheet, setSheet] = useState(false);
+  const [detail, setDetail] = useState(null);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState(null);
   const [filterGroup, setFilterGroup] = useState('all');
+  const [sortBy, setSortBy] = useState('alpha'); // alpha | age | level
+
+  // Auto-open student detail when navigated with openId
+  useEffect(() => {
+    if (params.openId) {
+      const st = students.find((s) => s.id === params.openId);
+      if (st) setDetail(st);
+    }
+  }, [params.openId, students]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('Berechtigung fehlt', 'Bitte erlaube den Zugriff auf die Galerie.'); return; }
+    if (status !== 'granted') { Alert.alert('Berechtigung fehlt'); return; }
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.4, base64: true, allowsEditing: true, aspect: [1, 1] });
     if (!res.canceled && res.assets?.[0]) {
-      const a = res.assets[0];
-      setForm((f) => ({ ...f, photoUrl: `data:image/jpeg;base64,${a.base64}` }));
+      setForm((f) => ({ ...f, photoUrl: `data:image/jpeg;base64,${res.assets[0].base64}` }));
     }
   };
 
-  const open = (st) => {
-    if (st) { setForm({ name: st.name, birthday: st.birthday || '', phone: st.phone || '', photoUrl: st.photoUrl || '', groupId: st.groupId, isRegistered: st.isRegistered }); setEditId(st.id); }
-    else { setForm({ ...empty, groupId: groups[0]?.id || '' }); setEditId(null); }
+  const openNew = () => { setForm({ ...empty, groupId: groups[0]?.id || '' }); setEditId(null); setDetail(null); setSheet(true); };
+  const openEdit = (st) => {
+    setForm({ name: st.name, birthday: st.birthday ? formatDate(st.birthday) : '', phone: st.phone || '', photoUrl: st.photoUrl || '', groupId: st.groupId, isRegistered: st.isRegistered });
+    setEditId(st.id);
+    setDetail(null);
     setSheet(true);
   };
 
   const save = async () => {
     if (!form.name.trim() || !form.groupId) { Alert.alert('Bitte Name & Gruppe wählen'); return; }
-    if (editId) await editStudent(editId, form); else await addStudent(form);
+    const payload = { ...form, birthday: parseGermanDate(form.birthday) };
+    if (editId) await editStudent(editId, payload); else await addStudent(payload);
     setSheet(false);
   };
 
-  const del = (st) => Alert.alert('Löschen?', `${st.name} entfernen?`, [{ text: 'Abbrechen' }, { text: 'Löschen', style: 'destructive', onPress: () => deleteStudent(st.id) }]);
+  const del = (st) => Alert.alert('Löschen?', `${st.name} entfernen?`, [{ text: 'Abbrechen' }, { text: 'Löschen', style: 'destructive', onPress: () => { deleteStudent(st.id); setDetail(null); } }]);
 
   const filtered = filterGroup === 'all' ? students : students.filter((st) => st.groupId === filterGroup);
-  const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+  const studentCount = (id) => attendance.filter((a) => a.studentId === id && a.status === 'Present').length;
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'age') {
+      const aA = calcAge(a.birthday) ?? 999;
+      const bA = calcAge(b.birthday) ?? 999;
+      return aA - bA;
+    }
+    if (sortBy === 'level') return studentCount(b.id) - studentCount(a.id);
+    return a.name.localeCompare(b.name);
+  });
+
+  const detailData = detail ? (() => {
+    const count = studentCount(detail.id);
+    const cur = getCurrentLevel(count, rewardLevels);
+    const next = getNextLevel(count, rewardLevels);
+    const grp = groups.find((g) => g.id === detail.groupId);
+    const progress = next && cur ? (count - cur.threshold) / (next.threshold - cur.threshold) : 1;
+    return { count, cur, next, grp, progress };
+  })() : null;
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8 }} style={{ flexGrow: 0 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 6 }} style={{ flexGrow: 0 }}>
         <Chip label="Alle" active={filterGroup === 'all'} onPress={() => setFilterGroup('all')} />
         {groups.map((g) => <Chip key={g.id} label={g.name} active={filterGroup === g.id} onPress={() => setFilterGroup(g.id)} color={g.color} />)}
       </ScrollView>
+      <View style={s.sortBar}>
+        <Text style={s.sortLabel}>Sortieren:</Text>
+        <Chip label="A-Z" active={sortBy === 'alpha'} onPress={() => setSortBy('alpha')} />
+        <Chip label="Alter" active={sortBy === 'age'} onPress={() => setSortBy('age')} />
+        <Chip label="🏆 Level" active={sortBy === 'level'} onPress={() => setSortBy('level')} />
+      </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100, gap: 10 }}>
         {sorted.length === 0 ? <EmptyState emoji="👥" title="Keine Schüler" subtitle="Füge Schüler zu deinen Gruppen hinzu" /> : sorted.map((st) => {
-          const count = attendance.filter((a) => a.studentId === st.id && a.status === 'Present').length;
+          const count = studentCount(st.id);
           const lvl = getCurrentLevel(count, rewardLevels);
           const grp = groups.find((g) => g.id === st.groupId);
           const age = calcAge(st.birthday);
           return (
-            <TouchableOpacity key={st.id} onPress={() => open(st)} testID={`student-card-${st.id}`}>
+            <TouchableOpacity key={st.id} onPress={() => setDetail(st)} testID={`student-card-${st.id}`}>
               <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <Avatar photo={st.photoUrl} name={st.name} size={48} badgeEmoji={lvl?.emoji} bgColor={grp?.color} />
                 <View style={{ flex: 1 }}>
                   <Text style={[s.name, { fontFamily: fonts.heading }]}>{st.name}</Text>
-                  <Text style={s.sub}>{grp?.name || '—'}{age ? ` • ${age}J` : ''} • {count}x dabei</Text>
+                  <Text style={s.sub}>{grp?.name || '—'}{age != null ? ` • ${age}J` : ''} • {count}x dabei</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
                     {st.isRegistered ? <Text style={s.pill}>✓ Angemeldet</Text> : <Text style={[s.pill, { backgroundColor: '#fde2e9', color: '#c05778' }]}>Offen</Text>}
+                    {lvl ? <Text style={{ fontSize: 14 }}>{lvl.emoji} <Text style={{ fontSize: 11, color: theme.mutedText, fontFamily: 'DMSans_400Regular' }}>{lvl.name}</Text></Text> : null}
                   </View>
                 </View>
-                <TouchableOpacity onPress={() => del(st)} testID={`delete-student-${st.id}`}><Text style={{ fontSize: 20 }}>🗑️</Text></TouchableOpacity>
               </Card>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
-      <View style={s.fab}><Btn title="+ Neuer Schüler" onPress={() => open(null)} testID="add-student-btn" /></View>
+      <View style={s.fab}><Btn title="+ Neuer Schüler" onPress={openNew} testID="add-student-btn" /></View>
 
+      {/* Detail Sheet */}
+      <Sheet visible={!!detail} onClose={() => setDetail(null)} title={detail?.name || ''}>
+        {detailData && detail ? (
+          <View style={{ gap: 14 }}>
+            <View style={{ alignItems: 'center', gap: 8 }}>
+              <Avatar photo={detail.photoUrl} name={detail.name} size={96} bgColor={detailData.grp?.color} />
+              <Text style={{ fontSize: 32 }}>{detailData.cur?.emoji || '🌱'}</Text>
+              <Text style={[s.lvlName, { fontFamily: fonts.heading }]}>{detailData.cur?.name || '—'}</Text>
+            </View>
+            <Card style={{ padding: 14, gap: 8 }}>
+              <Text style={[s.infoLbl, { fontFamily: fonts.bodyBold }]}>Trainings besucht</Text>
+              <Text style={[s.bigNum, { fontFamily: fonts.heading }]}>{detailData.count}</Text>
+              {detailData.next ? (
+                <>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={s.sub}>{detailData.count} Trainings</Text>
+                    <Text style={s.sub}>Nächstes: {detailData.next.emoji} {detailData.next.name} ({detailData.next.threshold})</Text>
+                  </View>
+                  <ProgressBar progress={detailData.progress} />
+                  <Text style={[s.sub, { textAlign: 'center', marginTop: 4 }]}>Noch {detailData.next.threshold - detailData.count} Training{detailData.next.threshold - detailData.count === 1 ? '' : 's'} bis zum nächsten Level</Text>
+                </>
+              ) : <Text style={[s.sub, { textAlign: 'center' }]}>🎉 Maximales Level erreicht!</Text>}
+            </Card>
+            <Card style={{ padding: 14, gap: 6 }}>
+              <View style={s.infoRow}><Text style={s.infoLbl}>Gruppe</Text><Text style={s.infoVal}>{detailData.grp?.name || '—'}</Text></View>
+              <View style={s.infoRow}><Text style={s.infoLbl}>Alter</Text><Text style={s.infoVal}>{calcAge(detail.birthday) != null ? `${calcAge(detail.birthday)} Jahre` : '—'}</Text></View>
+              <View style={s.infoRow}><Text style={s.infoLbl}>Geburtstag</Text><Text style={s.infoVal}>{formatDate(detail.birthday) || '—'}</Text></View>
+              <View style={s.infoRow}><Text style={s.infoLbl}>Telefon</Text><Text style={s.infoVal}>{detail.phone || '—'}</Text></View>
+              <View style={s.infoRow}><Text style={s.infoLbl}>Anmeldestatus</Text><Text style={s.infoVal}>{detail.isRegistered ? '✓ Angemeldet' : 'Offen'}</Text></View>
+            </Card>
+            <Btn title="✏️ Bearbeiten" onPress={() => openEdit(detail)} testID="student-edit-btn" />
+            <Btn title="🗑️ Löschen" variant="danger" onPress={() => del(detail)} testID="student-delete-btn" />
+          </View>
+        ) : null}
+      </Sheet>
+
+      {/* Edit/New Sheet */}
       <Sheet visible={sheet} onClose={() => setSheet(false)} title={editId ? 'Schüler bearbeiten' : 'Neuer Schüler'}>
         <View style={{ gap: 10 }}>
           <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center' }} testID="photo-pick-btn">
@@ -84,8 +159,8 @@ export default function Students() {
           </TouchableOpacity>
           <Text style={s.lbl}>Name</Text>
           <Input testID="student-name-input" value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} />
-          <Text style={s.lbl}>Geburtstag (YYYY-MM-DD)</Text>
-          <Input testID="student-birthday-input" value={form.birthday} onChangeText={(v) => setForm({ ...form, birthday: v })} placeholder="2015-08-20" />
+          <Text style={s.lbl}>Geburtstag (TT.MM.JJJJ)</Text>
+          <Input testID="student-birthday-input" value={form.birthday} onChangeText={(v) => setForm({ ...form, birthday: v })} placeholder="20.08.2015" />
           <Text style={s.lbl}>Telefon</Text>
           <Input testID="student-phone-input" value={form.phone} onChangeText={(v) => setForm({ ...form, phone: v })} keyboardType="phone-pad" />
           <Text style={s.lbl}>Gruppe</Text>
@@ -111,4 +186,11 @@ const s = StyleSheet.create({
   pill: { fontSize: 11, backgroundColor: '#e4f2e9', color: '#5b8a72', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, fontFamily: 'DMSans_700Bold' },
   fab: { position: 'absolute', bottom: 20, left: 20, right: 20 },
   lbl: { fontSize: 13, color: theme.mutedText, fontFamily: 'DMSans_700Bold', marginTop: 4 },
+  sortBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 6, flexWrap: 'wrap' },
+  sortLabel: { fontSize: 12, color: theme.mutedText, fontFamily: 'DMSans_700Bold', marginRight: 8, marginBottom: 8 },
+  lvlName: { fontSize: 22, color: theme.text },
+  infoLbl: { fontSize: 12, color: theme.mutedText, fontFamily: 'DMSans_700Bold' },
+  infoVal: { fontSize: 14, color: theme.text, fontFamily: 'DMSans_400Regular' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+  bigNum: { fontSize: 36, color: theme.primary, textAlign: 'center' },
 });

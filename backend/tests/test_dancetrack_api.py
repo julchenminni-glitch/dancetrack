@@ -201,6 +201,21 @@ def test_reward_level_custom_create_and_default_protected(headers, workspace):
     assert r3.status_code == 400
 
 
+# ============ Workspace phaseNames update (iteration 2) ============
+def test_workspace_phase_names_update(headers, workspace):
+    # initial defaults seeded
+    ws0 = next(w for w in requests.get(f"{API}/workspaces", headers=headers, timeout=10).json() if w["id"] == workspace["id"])
+    assert ws0.get("phaseNames", {}).get("knospe") == "Knospenphase"
+    # update
+    new_names = {"knospe": "TEST_Phase1", "bluete": "TEST_Phase2", "glueck": "TEST_Phase3"}
+    r = requests.patch(f"{API}/workspaces/{workspace['id']}", json={"phaseNames": new_names}, headers=headers, timeout=10)
+    assert r.status_code == 200, r.text
+    assert r.json()["phaseNames"] == new_names
+    # verify persisted via GET
+    ws1 = next(w for w in requests.get(f"{API}/workspaces", headers=headers, timeout=10).json() if w["id"] == workspace["id"])
+    assert ws1["phaseNames"] == new_names
+
+
 # ============ Group cascade delete ============
 def test_group_cascade_delete(headers, workspace):
     g = requests.post(f"{API}/workspaces/{workspace['id']}/groups",

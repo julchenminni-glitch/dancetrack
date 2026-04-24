@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Share, Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useApp } from '../../src/store';
-import { theme, fonts, WEEKDAYS, GROUP_COLORS } from '../../src/theme';
+import { theme, fonts, WEEKDAYS, GROUP_COLORS, calcAge, formatDate, getCurrentLevel } from '../../src/theme';
 import { Btn, Input, Sheet, Card, Chip, EmptyState } from '../../src/ui';
 
 const empty = { name: '', weekday: 'Montag', time: '16:00', color: GROUP_COLORS[0], rewardSystemEnabled: true };
 
 export default function Groups() {
-  const { groups, students, attendance, addGroup, editGroup, deleteGroup } = useApp();
+  const { groups, students, attendance, rewardLevels, addGroup, editGroup, deleteGroup, showToast } = useApp();
   const [sheet, setSheet] = useState(false);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState(null);
@@ -17,32 +19,82 @@ export default function Groups() {
     else { setForm(empty); setEditId(null); }
     setSheet(true);
   };
-
   const save = async () => {
     if (!form.name.trim()) return;
     if (editId) await editGroup(editId, form); else await addGroup(form);
     setSheet(false);
   };
-
   const del = (g) => Alert.alert('Gruppe löschen?', `"${g.name}" und alle zugehörigen Schüler werden gelöscht.`, [{ text: 'Abbrechen' }, { text: 'Löschen', style: 'destructive', onPress: () => deleteGroup(g.id) }]);
+
+  const exportGroup = async (g) => {
+    const members = students.filter((st) => st.groupId === g.id).sort((a, b) => a.name.localeCompare(b.name));
+    const rows = [['Name', 'Geburtstag', 'Alter', 'Telefon', 'Angemeldet', 'Trainings', 'Level']];
+    members.forEach((st) => {
+      const count = attendance.filter((a) => a.studentId === st.id && a.status === 'Present').length;
+      const lvl = getCurrentLevel(count, rewardLevels);
+      rows.push([
+        st.name,
+        formatDate(st.birthday) || '',
+        calcAge(st.birthday) != null ? String(calcAge(st.birthday)) : '',
+        st.phone || '',
+        st.isRegistered ? 'Ja' : 'Nein',
+        String(count),
+        lvl ? `${lvl.emoji} ${lvl.name}` : '',
+      ]);
+    });
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
+    const header = `Gruppe: ${g.name} (${g.weekday} ${g.time}) - ${members.length} Schüler\n\n`;
+    const content = header + csv;
+
+    try {
+      if (Platform.OS === 'web') {
+        // Web: trigger download
+        // eslint-disable-next-line no-undef
+        const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+        // eslint-disable-next-line no-undef
+        const url = URL.createObjectURL(blob);
+        // eslint-disable-next-line no-undef
+        const a = document.createElement('a');
+        a.href = url; a.download = `${g.name.replace(/\s+/g, '_')}.csv`; a.click();
+        // eslint-disable-next-line no-undef
+        URL.revokeObjectURL(url);
+        showToast('CSV heruntergeladen');
+      } else {
+        const path = `${FileSystem.cacheDirectory}${g.name.replace(/\s+/g, '_')}.csv`;
+        await FileSystem.writeAsStringAsync(path, '\uFEFF' + content, { encoding: FileSystem.EncodingType.UTF8 });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: `Gruppe "${g.name}" teilen` });
+        } else {
+          await Share.share({ message: content, title: `${g.name} Gruppenliste` });
+        }
+      }
+    } catch (e) {
+      Alert.alert('Export fehlgeschlagen', e.message || 'Unbekannter Fehler');
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100, gap: 12 }}>
         {groups.length === 0 ? <EmptyState emoji="🎭" title="Keine Gruppen" subtitle="Erstelle deine erste Tanzgruppe" /> : groups.map((g) => {
           const members = students.filter((st) => st.groupId === g.id);
-          const events = attendance.filter((a) => members.some((m) => m.id === a.studentId));
-          const presentCount = events.filter((e) => e.status === 'Present').length;
-          const quote = events.length ? Math.round((presentCount / events.length) * 100) : 0;
+          const recs = attendance.filter((a) => members.some((m) => m.id === a.studentId));
+          const presentCount = recs.filter((e) => e.status === 'Present').length;
+          const quote = recs.length ? Math.round((presentCount / recs.length) * 100) : 0;
           return (
-            <Card key={g.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }} testID={`group-card-${g.id}`}>
-              <View style={[s.initial, { backgroundColor: g.color }]}><Text style={s.initialText}>{g.name.charAt(0).toUpperCase()}</Text></View>
-              <TouchableOpacity style={{ flex: 1 }} onPress={() => open(g)}>
-                <Text style={[s.gName, { fontFamily: fonts.heading }]}>{g.name}</Text>
-                <Text style={s.gSub}>{g.weekday} • {g.time}</Text>
-                <Text style={s.gSub}>{members.length} Schüler • {quote}% Anwesend</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => del(g)} testID={`delete-group-${g.id}`}><Text style={{ fontSize: 20 }}>🗑️</Text></TouchableOpacity>
+            <Card key={g.id} style={{ gap: 10 }} testID={`group-card-${g.id}`}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <View style={[s.initial, { backgroundColor: g.color }]}><Text style={s.initialText}>{g.name.charAt(0).toUpperCase()}</Text></View>
+                <TouchableOpacity style={{ flex: 1 }} onPress={() => open(g)}>
+                  <Text style={[s.gName, { fontFamily: fonts.heading }]}>{g.name}</Text>
+                  <Text style={s.gSub}>{g.weekday} • {g.time}</Text>
+                  <Text style={s.gSub}>{members.length} Schüler • {quote}% Anwesend</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => del(g)} testID={`delete-group-${g.id}`}><Text style={{ fontSize: 20 }}>🗑️</Text></TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flex: 1 }}><Btn small title="📤 Liste exportieren" variant="secondary" onPress={() => exportGroup(g)} testID={`export-group-${g.id}`} /></View>
+              </View>
             </Card>
           );
         })}
