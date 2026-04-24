@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, TextInput, ScrollView, Pressable, Image } from 'react-native';
 import { theme, fonts } from './theme';
 
-export const Card = ({ children, style }) => (
-  <View style={[s.card, style]}>{children}</View>
+export const Card = ({ children, style, testID }) => (
+  <View testID={testID} style={[s.card, style]}>{children}</View>
 );
 
 export const Btn = ({ title, onPress, variant = 'primary', testID, disabled, icon, small }) => {

@@ -126,9 +126,7 @@ export default function Groups() {
           </TouchableOpacity>
           <Btn testID="group-save-btn" title={editId ? 'Speichern' : 'Erstellen'} onPress={save} />
           {editId ? (
-            <TouchableOpacity onPress={() => del(groups.find((x) => x.id === editId))} style={{ paddingVertical: 10, alignItems: 'center' }} testID={`delete-group-${editId}`}>
-              <Text style={{ color: '#c0477b', fontSize: 13, fontFamily: fonts.body }}>Gruppe löschen</Text>
-            </TouchableOpacity>
+            <Btn testID={`delete-group-${editId}`} title="🗑️  Gruppe löschen" variant="ghost" onPress={() => del(groups.find((x) => x.id === editId))} />
           ) : null}
         </View>
       </Sheet>
