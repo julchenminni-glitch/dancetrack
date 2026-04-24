@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../src/store';
@@ -28,12 +28,51 @@ export default function Students() {
   }, [params.openId, students]);
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('Berechtigung fehlt'); return; }
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.4, base64: true, allowsEditing: true, aspect: [1, 1] });
-    if (!res.canceled && res.assets?.[0]) {
-      setForm((f) => ({ ...f, photoUrl: `data:image/jpeg;base64,${res.assets[0].base64}` }));
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') { Alert.alert('Berechtigung fehlt', 'Erlaube Galerie-Zugriff in den Einstellungen.'); return; }
     }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.5,
+      base64: true,
+      allowsEditing: Platform.OS !== 'web',
+      aspect: [1, 1],
+    });
+    if (res.canceled || !res.assets?.[0]) return;
+    const a = res.assets[0];
+    let photoUrl = '';
+    if (a.base64) {
+      photoUrl = `data:image/jpeg;base64,${a.base64}`;
+    } else if (a.uri?.startsWith('data:')) {
+      photoUrl = a.uri;
+    } else if (a.uri) {
+      // Web blob URL → downscale to <=512px and convert to compressed JPEG base64
+      try {
+        photoUrl = await new Promise((resolve, reject) => {
+          // eslint-disable-next-line no-undef
+          const img = new window.Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const max = 512;
+            let w = img.width, h = img.height;
+            if (w > h && w > max) { h = (h * max) / w; w = max; }
+            else if (h > max) { w = (w * max) / h; h = max; }
+            // eslint-disable-next-line no-undef
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+          };
+          img.onerror = reject;
+          img.src = a.uri;
+        });
+      } catch (e) {
+        Alert.alert('Fehler', 'Foto konnte nicht verarbeitet werden.');
+        return;
+      }
+    }
+    if (photoUrl) setForm((f) => ({ ...f, photoUrl }));
   };
 
   const openNew = () => { setForm({ ...empty, groupId: groups[0]?.id || '' }); setEditId(null); setDetail(null); setSheet(true); };
