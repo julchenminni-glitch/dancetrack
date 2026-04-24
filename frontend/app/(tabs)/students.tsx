@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../src/store';
 import { theme, fonts, getCurrentLevel, getNextLevel, calcAge, formatDate, parseGermanDate } from '../../src/theme';
 import { Btn, Input, Sheet, Card, Chip, EmptyState, Avatar, ProgressBar } from '../../src/ui';
+import { confirm } from '../../src/confirm';
 
 const empty = { name: '', birthday: '', phone: '', photoUrl: '', groupId: '', isRegistered: false };
 
@@ -50,7 +51,7 @@ export default function Students() {
     setSheet(false);
   };
 
-  const del = (st) => Alert.alert('Löschen?', `${st.name} entfernen?`, [{ text: 'Abbrechen' }, { text: 'Löschen', style: 'destructive', onPress: () => { deleteStudent(st.id); setDetail(null); } }]);
+  const del = (st) => confirm('Löschen?', `${st.name} entfernen?`, () => { deleteStudent(st.id); setDetail(null); });
 
   const filtered = filterGroup === 'all' ? students : students.filter((st) => st.groupId === filterGroup);
   const studentCount = (id) => attendance.filter((a) => a.studentId === id && a.status === 'Present').length;

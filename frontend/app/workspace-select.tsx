@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../src/store';
 import { theme, fonts } from '../src/theme';
 import { Btn, Input, Card, Sheet, EmptyState } from '../src/ui';
+import { confirm } from '../src/confirm';
 
 export default function WorkspaceSelect() {
   const { workspaces, createWorkspace, setWorkspaceId, deleteWorkspace, logout, user } = useApp();
@@ -26,7 +27,7 @@ export default function WorkspaceSelect() {
             <Text style={[s.greeting, { fontFamily: fonts.body }]}>Hallo {user?.name} 👋</Text>
             <Text style={[s.title, { fontFamily: fonts.heading }]}>Wähle deinen Workspace</Text>
           </View>
-          <TouchableOpacity onPress={() => Alert.alert('Abmelden?', '', [{ text: 'Abbrechen' }, { text: 'Ja', onPress: logout }])} testID="logout-btn">
+          <TouchableOpacity onPress={() => confirm('Abmelden?', '', logout, 'Abmelden')} testID="logout-btn">
             <Text style={{ color: theme.mutedText, fontFamily: fonts.bodyBold }}>Abmelden</Text>
           </TouchableOpacity>
         </View>
@@ -44,10 +45,10 @@ export default function WorkspaceSelect() {
                     <Text style={[s.wsSub, { fontFamily: fonts.body }]}>Trainer: {w.trainerName}</Text>
                   </View>
                   <TouchableOpacity
-                    onPress={() => Alert.alert('Workspace löschen?', `"${w.name}" und alle Daten werden entfernt.`, [{ text: 'Abbrechen' }, { text: 'Löschen', style: 'destructive', onPress: () => deleteWorkspace(w.id) }])}
+                    onPress={() => confirm('Workspace löschen?', `"${w.name}" und alle Daten werden entfernt.`, () => deleteWorkspace(w.id))}
                     testID={`delete-ws-${w.id}`}
                   >
-                    <Text style={{ fontSize: 22 }}>🗑️</Text>
+                    <Text style={{ fontSize: 16, color: theme.mutedText }}>✕</Text>
                   </TouchableOpacity>
                 </Card>
               </TouchableOpacity>

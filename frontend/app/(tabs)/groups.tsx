@@ -5,6 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { useApp } from '../../src/store';
 import { theme, fonts, WEEKDAYS, GROUP_COLORS, calcAge, formatDate, getCurrentLevel } from '../../src/theme';
 import { Btn, Input, Sheet, Card, Chip, EmptyState } from '../../src/ui';
+import { confirm } from '../../src/confirm';
 
 const empty = { name: '', weekday: 'Montag', time: '16:00', color: GROUP_COLORS[0], rewardSystemEnabled: true };
 
@@ -24,7 +25,7 @@ export default function Groups() {
     if (editId) await editGroup(editId, form); else await addGroup(form);
     setSheet(false);
   };
-  const del = (g) => Alert.alert('Gruppe löschen?', `"${g.name}" und alle zugehörigen Schüler werden gelöscht.`, [{ text: 'Abbrechen' }, { text: 'Löschen', style: 'destructive', onPress: () => deleteGroup(g.id) }]);
+  const del = (g) => confirm('Gruppe löschen?', `"${g.name}" und alle zugehörigen Schüler werden gelöscht.`, () => { deleteGroup(g.id); setSheet(false); });
 
   const exportGroup = async (g) => {
     const members = students.filter((st) => st.groupId === g.id).sort((a, b) => a.name.localeCompare(b.name));
@@ -83,15 +84,15 @@ export default function Groups() {
           const quote = recs.length ? Math.round((presentCount / recs.length) * 100) : 0;
           return (
             <Card key={g.id} style={{ gap: 10 }} testID={`group-card-${g.id}`}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }} onPress={() => open(g)}>
                 <View style={[s.initial, { backgroundColor: g.color }]}><Text style={s.initialText}>{g.name.charAt(0).toUpperCase()}</Text></View>
-                <TouchableOpacity style={{ flex: 1 }} onPress={() => open(g)}>
+                <View style={{ flex: 1 }}>
                   <Text style={[s.gName, { fontFamily: fonts.heading }]}>{g.name}</Text>
                   <Text style={s.gSub}>{g.weekday} • {g.time}</Text>
                   <Text style={s.gSub}>{members.length} Schüler • {quote}% Anwesend</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => del(g)} testID={`delete-group-${g.id}`}><Text style={{ fontSize: 20 }}>🗑️</Text></TouchableOpacity>
-              </View>
+                </View>
+                <Text style={{ color: theme.mutedText, fontSize: 18 }}>›</Text>
+              </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <View style={{ flex: 1 }}><Btn small title="📤 Liste exportieren" variant="secondary" onPress={() => exportGroup(g)} testID={`export-group-${g.id}`} /></View>
               </View>
@@ -124,6 +125,11 @@ export default function Groups() {
             </View>
           </TouchableOpacity>
           <Btn testID="group-save-btn" title={editId ? 'Speichern' : 'Erstellen'} onPress={save} />
+          {editId ? (
+            <TouchableOpacity onPress={() => del(groups.find((x) => x.id === editId))} style={{ paddingVertical: 10, alignItems: 'center' }} testID={`delete-group-${editId}`}>
+              <Text style={{ color: '#c0477b', fontSize: 13, fontFamily: fonts.body }}>Gruppe löschen</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </Sheet>
     </View>

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'rea
 import { useApp } from '../../src/store';
 import { theme, fonts } from '../../src/theme';
 import { Btn, Input, Sheet, Card } from '../../src/ui';
+import { confirm } from '../../src/confirm';
 
 export default function Settings() {
   const { user, logout, currentWorkspace, updateWorkspace, rewardLevels, addLevel, deleteLevel } = useApp();
@@ -76,8 +77,8 @@ export default function Settings() {
               <Text style={s.lvlSub}>Ab {lvl.threshold} Trainings{lvl.phase ? ` • ${lvl.phase}` : ''}</Text>
             </View>
             {!lvl.isDefault ? (
-              <TouchableOpacity onPress={() => Alert.alert('Löschen?', '', [{ text: 'Abbrechen' }, { text: 'Ja', style: 'destructive', onPress: () => deleteLevel(lvl.id) }])}>
-                <Text style={{ fontSize: 18 }}>🗑️</Text>
+              <TouchableOpacity onPress={() => confirm('Level löschen?', lvl.name, () => deleteLevel(lvl.id))}>
+                <Text style={{ fontSize: 16, color: theme.mutedText }}>✕</Text>
               </TouchableOpacity>
             ) : null}
           </View>
@@ -96,7 +97,7 @@ export default function Settings() {
         </View>
       </Card>
 
-      <Btn variant="ghost" title="Abmelden" onPress={() => Alert.alert('Abmelden?', '', [{ text: 'Abbrechen' }, { text: 'Ja', onPress: logout }])} testID="logout-btn" />
+      <Btn variant="ghost" title="Abmelden" onPress={() => confirm('Abmelden?', '', logout, 'Abmelden')} testID="logout-btn" />
 
       <Sheet visible={sheet} onClose={() => setSheet(false)} title="Neues Level">
         <View style={{ gap: 10 }}>

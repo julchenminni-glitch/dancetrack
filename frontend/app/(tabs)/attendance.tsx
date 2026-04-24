@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'rea
 import { useApp } from '../../src/store';
 import { theme, fonts, EVENT_TYPES } from '../../src/theme';
 import { Btn, Input, Sheet, Card, Chip, EmptyState, Avatar } from '../../src/ui';
+import { confirm } from '../../src/confirm';
 
 const STATUS = [
   { key: 'Present', label: 'Anwesend', emoji: '🪩', color: '#5b8a72' },
@@ -45,14 +46,16 @@ export default function Attendance() {
           const t = EVENT_TYPES.find((x) => x.key === e.type);
           return (
             <Card key={e.id}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 22, marginRight: 10 }}>{t?.emoji}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.title, { fontFamily: fonts.heading }]}>{grp?.name || '—'} • {t?.label}</Text>
-                  <Text style={s.sub}>{new Date(e.date).toLocaleDateString('de-DE')} • {present}/{recs.length} anwesend</Text>
+              <TouchableOpacity onPress={() => confirm('Termin löschen?', `${grp?.name || ''} • ${new Date(e.date).toLocaleDateString('de-DE')}`, () => deleteEvent(e.id))} testID={`event-${e.id}`}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 22, marginRight: 10 }}>{t?.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.title, { fontFamily: fonts.heading }]}>{grp?.name || '—'} • {t?.label}</Text>
+                    <Text style={s.sub}>{new Date(e.date).toLocaleDateString('de-DE')} • {present}/{recs.length} anwesend</Text>
+                  </View>
+                  <Text style={{ color: theme.mutedText, fontSize: 16 }}>›</Text>
                 </View>
-                <TouchableOpacity onPress={() => Alert.alert('Termin löschen?', '', [{ text: 'Abbrechen' }, { text: 'Ja', style: 'destructive', onPress: () => deleteEvent(e.id) }])}><Text style={{ fontSize: 18 }}>🗑️</Text></TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             </Card>
           );
         })}

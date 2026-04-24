@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useApp } from '../../src/store';
 import { theme, fonts, WEEKDAYS } from '../../src/theme';
 import { Btn, Input, Sheet, Card, Chip, EmptyState } from '../../src/ui';
+import { confirm } from '../../src/confirm';
 
 const STATUSES = ['Planned', 'Done', 'Substituted', 'Cancelled'];
 const STATUS_LABEL = { Planned: 'Geplant', Done: 'Gehalten', Substituted: 'Vertretung', Cancelled: 'Entfällt' };
@@ -89,12 +90,14 @@ export default function Stunden() {
           {sortedSessions.length === 0 ? <EmptyState emoji="💼" title="Keine Einträge" /> : sortedSessions.map((s0) => {
             const g = groups.find((x) => x.id === s0.groupId);
             return (
-              <Card key={s0.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.gName, { fontFamily: fonts.bodyBold }]}>{g?.name || 'Allgemein'} • {s0.duration}h</Text>
-                  <Text style={s.sub}>{new Date(s0.date).toLocaleDateString('de-DE')}{s0.notes ? ` • ${s0.notes}` : ''}</Text>
-                </View>
-                <TouchableOpacity onPress={() => Alert.alert('Löschen?', '', [{ text: 'Abbrechen' }, { text: 'Ja', style: 'destructive', onPress: () => deleteSession(s0.id) }])}><Text style={{ fontSize: 18 }}>🗑️</Text></TouchableOpacity>
+              <Card key={s0.id}>
+                <TouchableOpacity onPress={() => confirm('Eintrag löschen?', `${g?.name || 'Allgemein'} • ${s0.duration}h`, () => deleteSession(s0.id))} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.gName, { fontFamily: fonts.bodyBold }]}>{g?.name || 'Allgemein'} • {s0.duration}h</Text>
+                    <Text style={s.sub}>{new Date(s0.date).toLocaleDateString('de-DE')}{s0.notes ? ` • ${s0.notes}` : ''}</Text>
+                  </View>
+                  <Text style={{ color: theme.mutedText, fontSize: 16 }}>›</Text>
+                </TouchableOpacity>
               </Card>
             );
           })}
