@@ -189,14 +189,25 @@ export default function Students() {
       {/* Edit/New Sheet */}
       <Sheet visible={sheet} onClose={() => setSheet(false)} title={editId ? 'Schüler bearbeiten' : 'Neuer Schüler'}>
         <View style={{ gap: 10 }}>
-          <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center' }} testID="photo-pick-btn">
-            {form.photoUrl ? <Image source={{ uri: form.photoUrl }} style={{ width: 96, height: 96, borderRadius: 48 }} /> : (
-              <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.border, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontSize: 28 }}>📷</Text>
-                <Text style={{ color: theme.mutedText, fontSize: 11, fontFamily: fonts.body }}>Foto</Text>
+          <View style={{ alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity onPress={pickImage} testID="photo-pick-btn">
+              {form.photoUrl ? <Image source={{ uri: form.photoUrl }} style={{ width: 96, height: 96, borderRadius: 48 }} /> : (
+                <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.border, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 28 }}>📷</Text>
+                  <Text style={{ color: theme.mutedText, fontSize: 11, fontFamily: fonts.body }}>Foto wählen</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            {form.photoUrl ? (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Btn small testID="photo-change-btn" title="📷 Anderes Foto" variant="secondary" onPress={pickImage} />
+                {editId ? (
+                  <Btn small testID="photo-save-btn" title="💾 Foto speichern" onPress={async () => { await editStudent(editId, { photoUrl: form.photoUrl }); }} />
+                ) : null}
+                <Btn small testID="photo-remove-btn" title="✕" variant="ghost" onPress={() => setForm((f) => ({ ...f, photoUrl: '' }))} />
               </View>
-            )}
-          </TouchableOpacity>
+            ) : null}
+          </View>
           <Text style={s.lbl}>Name</Text>
           <Input testID="student-name-input" value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} />
           <Text style={s.lbl}>Geburtstag (TT.MM.JJJJ)</Text>
