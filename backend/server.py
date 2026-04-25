@@ -179,6 +179,12 @@ class RewardLevelCreate(BaseModel):
     threshold: int
     phase: Optional[str] = ""
 
+class RewardLevelUpdate(BaseModel):
+    name: Optional[str] = None
+    emoji: Optional[str] = None
+    threshold: Optional[int] = None
+    phase: Optional[str] = None
+
 DEFAULT_REWARD_LEVELS = [
     {"name": "Samen", "emoji": "🌱", "threshold": 0, "phase": "Knospenphase"},
     {"name": "Spross", "emoji": "🌿", "threshold": 5, "phase": "Knospenphase"},
@@ -274,6 +280,23 @@ async def create_workspace(body: WorkspaceCreate, user: dict = Depends(get_curre
 async def update_workspace(ws_id: str, body: WorkspaceUpdate, user: dict = Depends(get_current_user)):
     await require_workspace_access(ws_id, user)
     upd = {k: v for k, v in body.dict(exclude_none=True).items()}
+    # If phaseNames are being updated, sync existing reward_levels' phase strings
+    if upd.get("phaseNames"):
+        old_ws = await db.workspaces.find_one({"id": ws_id}, {"_id": 0}) or {}
+        old_phases = old_ws.get("phaseNames") or {}
+        new_phases = upd["phaseNames"]
+        # Build mapping old_value -> new_value for keys whose value changed
+        renames = {}
+        for k in ("knospe", "bluete", "glueck"):
+            old_v = old_phases.get(k)
+            new_v = new_phases.get(k)
+            if old_v and new_v and old_v != new_v:
+                renames[old_v] = new_v
+        for old_v, new_v in renames.items():
+            await db.reward_levels.update_many(
+                {"workspaceId": ws_id, "phase": old_v},
+                {"$set": {"phase": new_v}},
+            )
     if upd:
         await db.workspaces.update_one({"id": ws_id}, {"$set": upd})
     ws = await db.workspaces.find_one({"id": ws_id}, {"_id": 0})
@@ -515,6 +538,18 @@ async def delete_level(ws_id: str, level_id: str, user: dict = Depends(get_curre
         raise HTTPException(status_code=400, detail="Cannot delete default level")
     await db.reward_levels.delete_one({"id": level_id, "workspaceId": ws_id})
     return {"ok": True}
+
+@api_router.patch("/workspaces/{ws_id}/reward-levels/{level_id}")
+async def update_level(ws_id: str, level_id: str, body: RewardLevelUpdate, user: dict = Depends(get_current_user)):
+    await require_workspace_access(ws_id, user)
+    lvl = await db.reward_levels.find_one({"id": level_id, "workspaceId": ws_id})
+    if not lvl:
+        raise HTTPException(status_code=404, detail="Level not found")
+    upd = {k: v for k, v in body.dict(exclude_none=True).items()}
+    if upd:
+        await db.reward_levels.update_one({"id": level_id, "workspaceId": ws_id}, {"$set": upd})
+    new_lvl = await db.reward_levels.find_one({"id": level_id, "workspaceId": ws_id}, {"_id": 0})
+    return new_lvl
 
 # ============ Health ============
 @api_router.get("/")

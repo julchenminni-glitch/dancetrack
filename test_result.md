@@ -110,6 +110,38 @@ user_problem_statement: |
   3. Groups: remove CSV export; PDF icon smaller/dezenter; tap card opens member list;
      edit-mode preserved (separate edit button).
   4. Registrations tab: only show students that are NOT yet registered.
+  5. NEW: Edit existing reward levels (incl. defaults) from the settings list. Phase
+     name updates should propagate into reward levels list.
+
+backend:
+  - task: "PATCH /api/workspaces/{ws_id}/reward-levels/{level_id} – edit reward level"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added RewardLevelUpdate model and PATCH endpoint that updates name/emoji/threshold/phase for any level (defaults too)."
+        - working: true
+          agent: "testing"
+          comment: "Verified via /app/backend_test.py against https://dancer-hub-4.preview.emergentagent.com/api with demo@dancetrack.app. PATCH on non-default level updates name/emoji/threshold/phase (200). PATCH on default level (isDefault=true) is allowed and returns 200 with updated doc (defaults editable). PATCH non-existent level_id returns 404. PATCH without Authorization header returns 401 (Not authenticated). PATCH with empty body {} returns 200 with the unchanged level document. Regression: POST /reward-levels creates non-default level (200), DELETE non-default returns 200, DELETE default returns 400 'Cannot delete default level'. All 19 assertions pass."
+  - task: "Phase rename auto-propagation in reward_levels"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "When PATCH /api/workspaces/{ws_id} updates phaseNames, all reward_levels in that workspace whose phase string matches the OLD phase value are bulk-updated to the NEW phase value via update_many."
+        - working: true
+          agent: "testing"
+          comment: "Tested with demo workspace. Captured 3 reward_levels with phase=current 'knospe' value before rename. PATCHed workspace with phaseNames.knospe='TestPhase1' (bluete & glueck unchanged). Re-fetch confirmed all 3 affected levels now have phase='TestPhase1'. Levels matching bluete and glueck were left untouched. Restored original phaseNames at the end and verified levels reverted correctly. update_many propagation works as designed."
 
 frontend:
   - task: "Attendance event details sheet + correct ratio (present / total group size)"
@@ -164,10 +196,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Attendance event details sheet + correct ratio (present / total group size)"
-    - "Groups: tap opens members sheet; small PDF icon; CSV removed; edit button preserved"
-    - "Registrations: only show non-registered students"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -175,3 +204,7 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: "Implemented 4 changes: attendance detail sheet with present/total counter, groups member sheet with smaller icons & no CSV, registrations filter, performance memoization. Bundle compiles successfully (920 modules). Awaiting user verification or testing approval."
+    - agent: "main"
+      message: "Added backend support for editing reward levels (PATCH /reward-levels/{id}) and auto-propagation of phaseNames updates into existing reward_levels (update_many). Frontend settings.tsx now opens an edit-sheet on tap, with phase selectable via Chip from current workspace phaseNames. Default levels editable but not deletable. Please test the new PATCH endpoint and the phase auto-rename behaviour using demo@dancetrack.app / demo12345."
+    - agent: "testing"
+      message: "Backend testing complete – all 19 assertions PASS in /app/backend_test.py. PATCH /api/workspaces/{ws_id}/reward-levels/{level_id} works for non-default and default levels (defaults are editable as required), returns 404 for unknown ids, 401 without auth, and 200 with current doc when body is empty. Phase rename auto-propagation via update_many works correctly: changing phaseNames.knospe propagates to all matching reward_levels while bluete/glueck stay untouched, and reverts cleanly on restore. Regression check: POST /reward-levels OK, DELETE non-default OK, DELETE default still returns 400. No issues found."

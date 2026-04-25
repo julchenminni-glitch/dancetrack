@@ -215,6 +215,11 @@ export const AppProvider = ({ children }) => {
     await loadAll();
     showToast('Level hinzugefügt');
   };
+  const editLevel = async (id, body) => {
+    await api.patch(`/workspaces/${workspaceId}/reward-levels/${id}`, body);
+    await loadAll();
+    showToast('Level aktualisiert');
+  };
   const deleteLevel = async (id) => {
     await api.delete(`/workspaces/${workspaceId}/reward-levels/${id}`);
     await loadAll();
@@ -235,7 +240,7 @@ export const AppProvider = ({ children }) => {
         saveAttendance, deleteEvent,
         addLesson, editLesson, deleteLesson,
         addSession, editSession, deleteSession,
-        addLevel, deleteLevel,
+        addLevel, editLevel, deleteLevel,
         loadAll, toast, showToast,
       }}
     >
