@@ -36,8 +36,7 @@ export default function Students() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.5,
       base64: true,
-      allowsEditing: Platform.OS !== 'web',
-      aspect: [1, 1],
+      allowsEditing: false,
     });
     if (res.canceled || !res.assets?.[0]) return;
     const a = res.assets[0];
