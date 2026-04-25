@@ -7,7 +7,7 @@ import { theme, fonts } from '../../src/theme';
 
 const TABS = [
   { key: 'overview', label: 'Übersicht', icon: '🏠' },
-  { key: 'groups', label: 'Gruppen', icon: '🎭' },
+  { key: 'groups', label: 'Gruppen', icon: '👯' },
   { key: 'students', label: 'Schüler', icon: '👥' },
   { key: 'attendance', label: 'Anwesenheit', icon: '📋' },
   { key: 'registrations', label: 'Anmeldungen', icon: '✅' },

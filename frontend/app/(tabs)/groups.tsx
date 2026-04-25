@@ -77,7 +77,7 @@ export default function Groups() {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100, gap: 12 }}>
-        {groups.length === 0 ? <EmptyState emoji="🎭" title="Keine Gruppen" subtitle="Erstelle deine erste Tanzgruppe" /> : groups.map((g) => {
+        {groups.length === 0 ? <EmptyState emoji="👯" title="Keine Gruppen" subtitle="Erstelle deine erste Tanzgruppe" /> : groups.map((g) => {
           const members = students.filter((st) => st.groupId === g.id);
           const recs = attendance.filter((a) => members.some((m) => m.id === a.studentId));
           const presentCount = recs.filter((e) => e.status === 'Present').length;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image, Platform, Modal, Pressable } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../src/store';
@@ -18,6 +18,7 @@ export default function Students() {
   const [editId, setEditId] = useState(null);
   const [filterGroup, setFilterGroup] = useState('all');
   const [sortBy, setSortBy] = useState('alpha'); // alpha | age | level
+  const [photoView, setPhotoView] = useState(null); // { uri, name }
 
   // Auto-open student detail when navigated with openId
   useEffect(() => {
@@ -186,8 +187,7 @@ export default function Students() {
       </Sheet>
 
       {/* Edit/New Sheet */}
-      <Sheet visible={sheet} onClose={() => setSheet(false)} title={editId ? 'Schüler bearbeiten' : 'Neuer Schüler'}>
-        <View style={{ gap: 10 }}>
+      <Sheet visible={sheet} onClose={() => setSheet(false)} title={editId ? 'Schüler bearbeiten' : 'Neuer Schüler'}>        <View style={{ gap: 10 }}>
           <View style={{ alignItems: 'center', gap: 8 }}>
             <TouchableOpacity onPress={pickImage} testID="photo-pick-btn">
               {form.photoUrl ? <Image source={{ uri: form.photoUrl }} style={{ width: 96, height: 96, borderRadius: 48 }} /> : (
@@ -226,6 +226,21 @@ export default function Students() {
           <Btn testID="student-save-btn" title={editId ? 'Speichern' : 'Hinzufügen'} onPress={save} />
         </View>
       </Sheet>
+
+      {/* Fullscreen Photo Viewer */}
+      <Modal visible={!!photoView} transparent animationType="fade" onRequestClose={() => setPhotoView(null)} statusBarTranslucent>
+        <Pressable style={s.photoBg} onPress={() => setPhotoView(null)} testID="photo-viewer-bg">
+          {photoView ? (
+            <>
+              <Image source={{ uri: photoView.uri }} style={s.photoLarge} resizeMode="contain" />
+              <Text style={[s.photoName, { fontFamily: fonts.heading }]}>{photoView.name}</Text>
+              <TouchableOpacity onPress={() => setPhotoView(null)} style={s.photoClose} testID="photo-viewer-close">
+                <Text style={{ color: '#fff', fontSize: 28 }}>✕</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -243,4 +258,13 @@ const s = StyleSheet.create({
   infoVal: { fontSize: 14, color: theme.text, fontFamily: 'DMSans_400Regular' },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   bigNum: { fontSize: 36, color: theme.primary, textAlign: 'center' },
+  zoomBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: theme.surface, borderRadius: 12, width: 24, height: 24, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: theme.border },
+  photoBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  photoLarge: { width: '100%', height: '80%' },
+  photoName: { color: '#fff', fontSize: 22, marginTop: 16, textAlign: 'center' },
+  photoClose: { position: 'absolute', top: 50, right: 20, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center' },
+});
+h: '100%', height: '80%' },
+  photoName: { color: '#fff', fontSize: 22, marginTop: 16, textAlign: 'center' },
+  photoClose: { position: 'absolute', top: 50, right: 20, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center' },
 });

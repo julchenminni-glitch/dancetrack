@@ -44,7 +44,7 @@ export default function Overview() {
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/groups')} testID="stat-groups-btn">
-          <Card style={s.stat}><Text style={s.statEmoji}>🎭</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{groups.length}</Text><Text style={s.statLabel}>Gruppen</Text></Card>
+          <Card style={s.stat}><Text style={s.statEmoji}>👯</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{groups.length}</Text><Text style={s.statLabel}>Gruppen</Text></Card>
         </TouchableOpacity>
         <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/students')} testID="stat-students-btn">
           <Card style={s.stat}><Text style={s.statEmoji}>👥</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{students.length}</Text><Text style={s.statLabel}>Schüler</Text></Card>
