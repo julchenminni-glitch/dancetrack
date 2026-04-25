@@ -101,3 +101,77 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  DanceTrack mobile/web app for dance trainers. Latest user requests:
+  1. Anwesenheits-Tab: tap event to see attendance details (present/absent/excused list);
+     show "X/Total" where Total = group size.
+  2. Performance: smoother UI, less stutter.
+  3. Groups: remove CSV export; PDF icon smaller/dezenter; tap card opens member list;
+     edit-mode preserved (separate edit button).
+  4. Registrations tab: only show students that are NOT yet registered.
+
+frontend:
+  - task: "Attendance event details sheet + correct ratio (present / total group size)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/(tabs)/attendance.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Tapping an event now opens a detail sheet listing all group students with their statuses (Present 🪩 / Excused 🌴 / Absent 👻). Card shows present/totalGroupSize. Delete via button inside sheet."
+  - task: "Groups: tap opens members sheet; small PDF icon; CSV removed; edit button preserved"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/(tabs)/groups.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Group card now has small icon buttons (📄 PDF, ✏️ edit) and tapping the card opens a member-list sheet. CSV export removed. Edit and delete still available from edit sheet (and via button inside members sheet)."
+  - task: "Registrations: only show non-registered students"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/(tabs)/registrations.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Filtered to !isRegistered. Tap marks as registered and removes from list. Counter shows registered/total."
+  - task: "Performance: memoize derived data per tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/(tabs)/*.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Built indices (groupById, studentsByGroup, attendanceByEvent, attendanceCountByStudent) via useMemo; memoized list cards (EventCard, GroupCard) to reduce re-renders; ScrollView removeClippedSubviews."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.1"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Attendance event details sheet + correct ratio (present / total group size)"
+    - "Groups: tap opens members sheet; small PDF icon; CSV removed; edit button preserved"
+    - "Registrations: only show non-registered students"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Implemented 4 changes: attendance detail sheet with present/total counter, groups member sheet with smaller icons & no CSV, registrations filter, performance memoization. Bundle compiles successfully (920 modules). Awaiting user verification or testing approval."
