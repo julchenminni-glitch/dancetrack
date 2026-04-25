@@ -264,7 +264,3 @@ const s = StyleSheet.create({
   photoName: { color: '#fff', fontSize: 22, marginTop: 16, textAlign: 'center' },
   photoClose: { position: 'absolute', top: 50, right: 20, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center' },
 });
-h: '100%', height: '80%' },
-  photoName: { color: '#fff', fontSize: 22, marginTop: 16, textAlign: 'center' },
-  photoClose: { position: 'absolute', top: 50, right: 20, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center' },
-});
