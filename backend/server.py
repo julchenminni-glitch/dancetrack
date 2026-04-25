@@ -88,6 +88,10 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class PasswordReset(BaseModel):
+    email: EmailStr
+    new_password: str
+
 class AuthResponse(BaseModel):
     access_token: str
     user: Dict[str, Any]
@@ -223,6 +227,19 @@ async def login(body: UserLogin):
 @api_router.get("/auth/me")
 async def me(user: dict = Depends(get_current_user)):
     return user
+
+@api_router.post("/auth/reset-password")
+async def reset_password(body: PasswordReset):
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Passwort muss mindestens 6 Zeichen lang sein")
+    email = body.email.lower()
+    user = await db.users.find_one({"email": email})
+    if not user:
+        # Don't leak existence – but we DO need to confirm to user.
+        # For a personal-use app we surface the result.
+        raise HTTPException(status_code=404, detail="Keine Konto mit dieser E-Mail gefunden")
+    await db.users.update_one({"id": user["id"]}, {"$set": {"password_hash": hash_password(body.new_password)}})
+    return {"ok": True}
 
 # ============ Workspace Routes ============
 @api_router.get("/workspaces")
