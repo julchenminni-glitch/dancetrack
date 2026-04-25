@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useApp } from '../../src/store';
 import { theme, fonts, getCurrentLevel } from '../../src/theme';
@@ -6,39 +6,75 @@ import { Card, ProgressBar } from '../../src/ui';
 
 export default function Awards() {
   const { rewardLevels, students, attendance, groups, currentWorkspace } = useApp();
-  const phaseNames = currentWorkspace?.phaseNames || { knospe: 'Knospenphase', bluete: 'Blütenphase', glueck: 'Glückstierchenphase' };
 
-  const sorted = [...rewardLevels].sort((a, b) => a.threshold - b.threshold);
+  const phaseNames = useMemo(
+    () => currentWorkspace?.phaseNames || { knospe: 'Knospenphase', bluete: 'Blütenphase', glueck: 'Glückstierchenphase' },
+    [currentWorkspace]
+  );
 
-  // Remap default phase values to user-customized names
-  const phaseMap = { Knospenphase: phaseNames.knospe, Blütenphase: phaseNames.bluete, Glückstierchenphase: phaseNames.glueck };
+  const sortedLevels = useMemo(
+    () => [...rewardLevels].sort((a, b) => a.threshold - b.threshold),
+    [rewardLevels]
+  );
+
+  // Map default phase strings to current names (legacy fallback)
+  const phaseMap = useMemo(
+    () => ({ Knospenphase: phaseNames.knospe, Blütenphase: phaseNames.bluete, Glückstierchenphase: phaseNames.glueck }),
+    [phaseNames]
+  );
   const displayPhase = (p) => (p ? (phaseMap[p] || p) : '');
 
-  // Group by phase
-  const grouped = sorted.reduce((acc, lvl) => {
-    const key = displayPhase(lvl.phase) || 'Weitere';
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(lvl);
-    return acc;
-  }, {});
+  const grouped = useMemo(() => {
+    const map = {};
+    sortedLevels.forEach((lvl) => {
+      const key = displayPhase(lvl.phase) || 'Weitere';
+      (map[key] ||= []).push(lvl);
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedLevels, phaseMap]);
 
-  const studentAttendanceCount = students.reduce((acc, s) => {
-    acc[s.id] = attendance.filter((a) => a.studentId === s.id && a.status === 'Present').length;
-    return acc;
-  }, {});
+  // Single-pass attendance count map
+  const studentAttendanceCount = useMemo(() => {
+    const map = {};
+    attendance.forEach((a) => {
+      if (a.status === 'Present') map[a.studentId] = (map[a.studentId] || 0) + 1;
+    });
+    return map;
+  }, [attendance]);
 
-  const top = [...students]
-    .map((s) => ({ s, c: studentAttendanceCount[s.id] || 0, lvl: getCurrentLevel(studentAttendanceCount[s.id] || 0, rewardLevels) }))
-    .filter((x) => x.c > 0)
-    .sort((a, b) => b.c - a.c)
-    .slice(0, 10);
+  const groupById = useMemo(() => Object.fromEntries(groups.map((g) => [g.id, g])), [groups]);
+
+  const top = useMemo(() => {
+    const list = students
+      .map((st) => {
+        const c = studentAttendanceCount[st.id] || 0;
+        return { s: st, c, lvl: getCurrentLevel(c, sortedLevels) };
+      })
+      .filter((x) => x.c > 0);
+    list.sort((a, b) => b.c - a.c);
+    return list.slice(0, 10);
+  }, [students, studentAttendanceCount, sortedLevels]);
+
+  // Pre-compute per-level achievement count (one pass over students)
+  const levelAchievement = useMemo(() => {
+    const map = {};
+    sortedLevels.forEach((lvl) => {
+      let cnt = 0;
+      students.forEach((st) => {
+        if ((studentAttendanceCount[st.id] || 0) >= lvl.threshold) cnt++;
+      });
+      map[lvl.id] = cnt;
+    });
+    return map;
+  }, [sortedLevels, students, studentAttendanceCount]);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} removeClippedSubviews>
       <Card>
         <Text style={[s.title, { fontFamily: fonts.heading }]}>🏆 Top Achievers</Text>
         {top.length === 0 ? <Text style={s.muted}>Noch keine Daten</Text> : top.map((t, i) => {
-          const grp = groups.find((g) => g.id === t.s.groupId);
+          const grp = groupById[t.s.groupId];
           return (
             <View key={t.s.id} style={s.row}>
               <Text style={{ fontSize: 18, width: 28 }}>{['🥇', '🥈', '🥉'][i] || `${i + 1}.`}</Text>
@@ -56,9 +92,10 @@ export default function Awards() {
       {Object.entries(grouped).map(([phase, levels]) => (
         <View key={phase}>
           <Text style={[s.phaseTitle, { fontFamily: fonts.heading }]}>{phase}</Text>
-          {levels.map((lvl, i) => {
-            const next = sorted[sorted.findIndex((x) => x.id === lvl.id) + 1];
-            const countAchieved = students.filter((st) => (studentAttendanceCount[st.id] || 0) >= lvl.threshold).length;
+          {levels.map((lvl) => {
+            const idx = sortedLevels.findIndex((x) => x.id === lvl.id);
+            const next = sortedLevels[idx + 1];
+            const countAchieved = levelAchievement[lvl.id] || 0;
             const progress = students.length > 0 ? countAchieved / students.length : 0;
             return (
               <Card key={lvl.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>

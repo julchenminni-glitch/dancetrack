@@ -92,23 +92,40 @@ export default function Students() {
 
   const del = (st) => confirm('Löschen?', `${st.name} entfernen?`, () => { deleteStudent(st.id); setDetail(null); });
 
-  const filtered = filterGroup === 'all' ? students : students.filter((st) => st.groupId === filterGroup);
-  const studentCount = (id) => attendance.filter((a) => a.studentId === id && a.status === 'Present').length;
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'age') {
-      const aA = calcAge(a.birthday) ?? 999;
-      const bA = calcAge(b.birthday) ?? 999;
-      return aA - bA;
-    }
-    if (sortBy === 'level') return studentCount(b.id) - studentCount(a.id);
-    return a.name.localeCompare(b.name);
-  });
+  // ===== Memoized indices for performance =====
+  const attendanceCountByStudent = React.useMemo(() => {
+    const map = {};
+    attendance.forEach((a) => {
+      if (a.status === 'Present') map[a.studentId] = (map[a.studentId] || 0) + 1;
+    });
+    return map;
+  }, [attendance]);
+  const groupById = React.useMemo(() => Object.fromEntries(groups.map((g) => [g.id, g])), [groups]);
+
+  const filtered = React.useMemo(
+    () => (filterGroup === 'all' ? students : students.filter((st) => st.groupId === filterGroup)),
+    [students, filterGroup]
+  );
+  const studentCount = (id) => attendanceCountByStudent[id] || 0;
+  const sorted = React.useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      if (sortBy === 'age') {
+        const aA = calcAge(a.birthday) ?? 999;
+        const bA = calcAge(b.birthday) ?? 999;
+        return aA - bA;
+      }
+      if (sortBy === 'level') return (attendanceCountByStudent[b.id] || 0) - (attendanceCountByStudent[a.id] || 0);
+      return a.name.localeCompare(b.name);
+    });
+    return arr;
+  }, [filtered, sortBy, attendanceCountByStudent]);
 
   const detailData = detail ? (() => {
     const count = studentCount(detail.id);
     const cur = getCurrentLevel(count, rewardLevels);
     const next = getNextLevel(count, rewardLevels);
-    const grp = groups.find((g) => g.id === detail.groupId);
+    const grp = groupById[detail.groupId];
     const progress = next && cur ? (count - cur.threshold) / (next.threshold - cur.threshold) : 1;
     return { count, cur, next, grp, progress };
   })() : null;

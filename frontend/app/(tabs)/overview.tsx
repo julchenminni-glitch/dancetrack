@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '../../src/store';
@@ -9,39 +9,73 @@ export default function Overview() {
   const router = useRouter();
   const { groups, students, sessions, events, attendance, rewardLevels } = useApp();
 
-  const totalHours = sessions.reduce((a, s) => a + (s.duration || 0), 0);
+  // ===== Memoized derivations =====
+  const totalHours = useMemo(
+    () => sessions.reduce((a, s) => a + (s.duration || 0), 0),
+    [sessions]
+  );
 
-  const studentAttendanceCount = students.reduce((acc, st) => {
-    acc[st.id] = attendance.filter((a) => a.studentId === st.id && a.status === 'Present').length;
-    return acc;
-  }, {});
+  // Build single index of attendance counts in one pass (avoid N*M filter)
+  const studentAttendanceCount = useMemo(() => {
+    const map = {};
+    attendance.forEach((a) => {
+      if (a.status === 'Present') map[a.studentId] = (map[a.studentId] || 0) + 1;
+    });
+    return map;
+  }, [attendance]);
 
-  const nextLevelUps = students
-    .map((st) => {
+  const sortedRewardLevels = useMemo(
+    () => [...rewardLevels].sort((a, b) => a.threshold - b.threshold),
+    [rewardLevels]
+  );
+
+  const nextLevelUps = useMemo(() => {
+    const list = [];
+    for (const st of students) {
       const count = studentAttendanceCount[st.id] || 0;
-      const next = getNextLevel(count, rewardLevels);
-      const current = getCurrentLevel(count, rewardLevels);
-      if (!next) return null;
-      const diff = next.threshold - count;
-      return diff === 1 ? { student: st, next, current, count } : null;
-    })
-    .filter(Boolean);
+      const next = getNextLevel(count, sortedRewardLevels);
+      if (!next) continue;
+      if (next.threshold - count === 1) {
+        list.push({ student: st, next, current: getCurrentLevel(count, sortedRewardLevels), count });
+      }
+    }
+    return list;
+  }, [students, studentAttendanceCount, sortedRewardLevels]);
 
-  const topAchievers = [...students]
-    .map((st) => ({ st, count: studentAttendanceCount[st.id] || 0, lvl: getCurrentLevel(studentAttendanceCount[st.id] || 0, rewardLevels) }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 3);
+  const topAchievers = useMemo(() => {
+    return students
+      .map((st) => ({
+        st,
+        count: studentAttendanceCount[st.id] || 0,
+        lvl: getCurrentLevel(studentAttendanceCount[st.id] || 0, sortedRewardLevels),
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+  }, [students, studentAttendanceCount, sortedRewardLevels]);
 
-  const today = new Date();
-  const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-  startOfWeek.setHours(0, 0, 0, 0);
-  const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 7);
-  const weekEvents = events.filter((e) => { const d = new Date(e.date); return d >= startOfWeek && d < endOfWeek; });
+  const groupsByDay = useMemo(() => {
+    const map = {};
+    groups.forEach((g) => { (map[g.weekday] ||= []).push(g); });
+    return map;
+  }, [groups]);
+
+  const weekEventsByGroup = useMemo(() => {
+    const today = new Date();
+    const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 7);
+    const set = new Set();
+    events.forEach((e) => {
+      const d = new Date(e.date);
+      if (d >= startOfWeek && d < endOfWeek) set.add(e.groupId);
+    });
+    return set;
+  }, [events]);
 
   const goStudent = (id) => router.push({ pathname: '/(tabs)/students', params: { openId: id } });
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }} removeClippedSubviews>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/groups')} testID="stat-groups-btn">
           <Card style={s.stat}><Text style={s.statEmoji}>👯</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{groups.length}</Text><Text style={s.statLabel}>Gruppen</Text></Card>
@@ -86,13 +120,13 @@ export default function Overview() {
         {groups.length === 0 ? (
           <EmptyState emoji="🎭" title="Noch keine Gruppen" subtitle="Erstelle deine erste Tanzgruppe" />
         ) : WEEKDAYS.map((wd) => {
-          const gs = groups.filter((g) => g.weekday === wd);
-          if (gs.length === 0) return null;
+          const gs = groupsByDay[wd];
+          if (!gs || gs.length === 0) return null;
           return (
             <View key={wd} style={{ marginTop: 8 }}>
               <Text style={[s.weekDay, { fontFamily: fonts.bodyBold }]}>{wd}</Text>
               {gs.map((g) => {
-                const done = weekEvents.some((e) => e.groupId === g.id);
+                const done = weekEventsByGroup.has(g.id);
                 return (
                   <TouchableOpacity key={g.id} style={s.weekItem} onPress={() => router.push('/(tabs)/attendance')}>
                     <View style={[s.groupDot, { backgroundColor: g.color }]} />
