@@ -4,7 +4,7 @@
     "slug": "dancetrack",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/DanceTrackIcon.png"
+    "icon": "./assets/images/DanceTrackIcon.png",
     "scheme": "DanceTrack",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/DanceTrackIcon.png"
+        "foregroundImage": "./assets/images/DanceTrackIcon.png",
         "backgroundColor": "#ffd6e7"
       },
       "edgeToEdgeEnabled": true,
@@ -22,14 +22,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-        "favicon": "./assets/images/DanceTrackIcon.png"
+      "favicon": "./assets/images/DanceTrackIcon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/DanceTrackIcon.png"
+          "image": "./assets/images/DanceTrackIcon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffd6e7"
