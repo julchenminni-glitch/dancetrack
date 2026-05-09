@@ -9,8 +9,12 @@ import { theme } from '../src/theme';
 import { Toast } from '../src/ui';
 import { ConfirmProvider } from '../src/confirmModal';
 
-function Gate({ children }) {
-  const { user, authReady, workspaceId, toast } = useApp();
+interface GateProps {
+  children: React.ReactNode;
+}
+
+function Gate({ children }: GateProps) {
+  const { user, authReady, workspaceId, toast } = useApp() || { user: null, authReady: false, workspaceId: null, toast: null };
   const segments = useSegments();
   const router = useRouter();
 
