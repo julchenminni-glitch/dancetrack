@@ -1,0 +1,127 @@
+{
+  "project_context": {
+    "name": "DanceTrack",
+    "theme": "light",
+    "archetype": "Pastel & Soft (Custom User Palette)",
+    "description": "Mobile dance management app for trainers to manage groups, students, attendance, and rewards.",
+    "environment": "Expo React Native (or Mobile-First React PWA) using Tailwind / NativeWind"
+  },
+  "colors": {
+    "background": "#fef5f5",
+    "surface": "#ffffff",
+    "text": "#6b4e5c",
+    "primary": "#d4719d",
+    "secondary": "#c9a8d4",
+    "accent_green": "#5b8a72",
+    "accent_purple": "#7b6ba5",
+    "accent_gold": "#c4883a",
+    "borders": "#f0e1e5",
+    "muted_text": "#9e7e8d"
+  },
+  "typography": {
+    "headings_font": "DM Serif Display",
+    "body_font": "DM Sans",
+    "h1": "text-4xl tracking-tight leading-tight",
+    "h2": "text-2xl tracking-tight",
+    "h3": "text-xl font-bold",
+    "body": "text-base leading-relaxed text-[#6b4e5c]",
+    "small": "text-sm text-[#9e7e8d]",
+    "overline": "text-xs uppercase tracking-[0.2em] font-bold text-[#c9a8d4]"
+  },
+  "layout_spacing": {
+    "general": "Mobile-first layout. Content should be constrained and scrollable.",
+    "screen_padding": "p-4 sm:p-6",
+    "card_padding": "p-4 sm:p-6",
+    "gap_large": "gap-6",
+    "gap_medium": "gap-4",
+    "gap_small": "gap-2"
+  },
+  "components": {
+    "group_card": {
+      "style": "bg-[#ffffff] rounded-2xl shadow-sm border border-[#f0e1e5] p-4 flex flex-row items-center gap-4",
+      "features": "Large circular initial with dynamic background color (from secondary/accents), bold DM Serif Display heading for group name, small DM Sans text for day/time."
+    },
+    "student_avatar": {
+      "style": "rounded-full w-12 h-12 object-cover border-2 border-[#ffffff] shadow-sm relative",
+      "features": "Use actual photo if available, fallback to default avatar. Display the current reward level emoji (🌱🌿🍃🍀🌼🌻🐝🐞🐛🦋) as an absolute positioned badge at the bottom-right corner."
+    },
+    "attendance_status": {
+      "present": "Emoji: 🪩, Bg: bg-[#5b8a72]/10, Text: text-[#5b8a72]",
+      "excused": "Emoji: 🌴, Bg: bg-[#c4883a]/10, Text: text-[#c4883a]",
+      "absent": "Emoji: 👻, Bg: bg-[#d4719d]/10, Text: text-[#d4719d]"
+    },
+    "progress_bar": {
+      "style": "h-2 w-full bg-[#f0e1e5] rounded-full overflow-hidden",
+      "indicator": "bg-[#d4719d] h-full rounded-full transition-all duration-300"
+    },
+    "bottom_sheet_modal": {
+      "style": "bg-[#ffffff] rounded-t-3xl p-6 shadow-[0_-8px_30px_rgba(107,78,92,0.1)]",
+      "features": "Used for quick actions like adding a student, marking attendance, or editing group details."
+    },
+    "navigation": {
+      "style": "bg-[#ffffff] border-t border-[#f0e1e5] pb-safe pt-2 px-4 flex justify-around items-center",
+      "active_state": "text-[#d4719d]",
+      "inactive_state": "text-[#9e7e8d]"
+    }
+  },
+  "media_urls": {
+    "awards": [
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/ef27228c-592b-4fdd-b829-b5c7e0c2dab3/images/7238bdc4e172c7d4b28e5910854186609b2e886fb1d783fdf004968e78d9a723.png",
+        "description": "3D gold trophy for the Top Achievers screen",
+        "category": "trophy"
+      }
+    ],
+    "status_icons": [
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/ef27228c-592b-4fdd-b829-b5c7e0c2dab3/images/1e491c3946ee0586382bbe9ed9d8a01a286859962df90de4deb12ddf5ce1640a.png",
+        "description": "3D Disco ball for Present status fallback",
+        "category": "present"
+      },
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/ef27228c-592b-4fdd-b829-b5c7e0c2dab3/images/8590ca45d48077b5fba4b75ec1c00b162b592b35d394c3c54fb8d6285419fb16.png",
+        "description": "3D Palm tree for Excused status fallback",
+        "category": "excused"
+      },
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/ef27228c-592b-4fdd-b829-b5c7e0c2dab3/images/16005195109596844953d341d64be50e9491c8102769828262da093c7a031149.png",
+        "description": "3D Ghost for Absent status fallback",
+        "category": "absent"
+      }
+    ],
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1627687536020-bb6eda577714?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwzfHxkYW5jZSUyMHRyYWluZXIlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzcwNTQ3NDV8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Trainer avatar placeholder",
+        "category": "trainer"
+      },
+      {
+        "url": "https://images.pexels.com/photos/6716659/pexels-photo-6716659.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Student avatar placeholder 1",
+        "category": "student"
+      },
+      {
+        "url": "https://images.pexels.com/photos/6717375/pexels-photo-6717375.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Student avatar placeholder 2",
+        "category": "student"
+      }
+    ]
+  },
+  "animations": {
+    "hover": "scale-[1.02] transition-transform duration-200 ease-out",
+    "active": "scale-[0.98] opacity-90 transition-all duration-100",
+    "sheet_entrance": "slide-up from bottom with spring physics"
+  },
+  "testing": {
+    "attributes": "All touchable elements, buttons, inputs, and list items MUST have data-testid in kebab-case."
+  },
+  "instructions_to_main_agent": [
+    "Use standard React/Tailwind syntax mapping if building a web-first Expo app or native primitives for purely React Native.",
+    "Prioritize smooth touch interactions. Use scrollable views for long lists.",
+    "Implement the Workspace selector as a prominent dropdown in the top header.",
+    "Avoid harsh shadows; use soft, diffuse drop shadows for cards to fit the pastel theme.",
+    "Use the exact hex codes requested: Background #fef5f5, Surfaces #ffffff, Text #6b4e5c, Primary #d4719d.",
+    "Do not use .tsx files if the environment only supports .js.",
+    "Include 'data-testid' on interactive elements for automated testing."
+  ]
+}

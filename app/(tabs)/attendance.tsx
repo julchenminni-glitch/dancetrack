@@ -1,0 +1,210 @@
+import React, { useState, useMemo, useCallback, memo } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { useApp } from '../../src/store';
+import { theme, fonts, EVENT_TYPES } from '../../src/theme';
+import { Btn, Input, Sheet, Card, Chip, EmptyState, Avatar } from '../../src/ui';
+import { confirm } from '../../src/confirm';
+
+const STATUS = [
+  { key: 'Present', label: 'Anwesend', emoji: '🪩', color: '#5b8a72' },
+  { key: 'Excused', label: 'Entschuldigt', emoji: '🌴', color: '#c4883a' },
+  { key: 'Absent', label: 'Fehlend', emoji: '👻', color: '#d4719d' },
+];
+const STATUS_MAP = { Present: STATUS[0], Excused: STATUS[1], Absent: STATUS[2] };
+
+// Memoized event row to avoid re-rendering all cards on small state changes
+const EventCard = memo(function EventCard({ ev, group, eventType, presentCount, totalGroupSize, onPress }) {
+  return (
+    <Card>
+      <TouchableOpacity onPress={onPress} testID={`event-${ev.id}`}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 22, marginRight: 10 }}>{eventType?.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.title, { fontFamily: fonts.heading }]}>{group?.name || '—'} • {eventType?.label}</Text>
+            <Text style={s.sub}>{new Date(ev.date).toLocaleDateString('de-DE')} • {presentCount}/{totalGroupSize} anwesend</Text>
+          </View>
+          <Text style={{ color: theme.mutedText, fontSize: 16 }}>›</Text>
+        </View>
+      </TouchableOpacity>
+    </Card>
+  );
+});
+
+export default function Attendance() {
+  const { groups, students, events, attendance, saveAttendance, deleteEvent } = useApp();
+  const [sheet, setSheet] = useState(false);
+  const [type, setType] = useState('Training');
+  const [groupId, setGroupId] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [marks, setMarks] = useState({});
+
+  const [detailEventId, setDetailEventId] = useState(null);
+
+  // ===== Memoized indices for performance =====
+  const groupById = useMemo(() => Object.fromEntries(groups.map((g) => [g.id, g])), [groups]);
+  const studentsByGroup = useMemo(() => {
+    const map = {};
+    students.forEach((st) => { (map[st.groupId] ||= []).push(st); });
+    return map;
+  }, [students]);
+  const studentById = useMemo(() => Object.fromEntries(students.map((st) => [st.id, st])), [students]);
+  const attendanceByEvent = useMemo(() => {
+    const map = {};
+    attendance.forEach((a) => { (map[a.eventId] ||= []).push(a); });
+    return map;
+  }, [attendance]);
+  const eventTypeMap = useMemo(() => Object.fromEntries(EVENT_TYPES.map((t) => [t.key, t])), []);
+
+  const sortedEvents = useMemo(() => [...events].sort((a, b) => b.date.localeCompare(a.date)), [events]);
+
+  const open = useCallback(() => {
+    setType('Training');
+    setGroupId(groups[0]?.id || '');
+    setDate(new Date().toISOString().slice(0, 10));
+    setMarks({});
+    setSheet(true);
+  }, [groups]);
+
+  const cycle = useCallback((id) => {
+    setMarks((m) => {
+      const cur = m[id] || 'Present';
+      const idx = STATUS.findIndex((sx) => sx.key === cur);
+      return { ...m, [id]: STATUS[(idx + 1) % STATUS.length].key };
+    });
+  }, []);
+
+  const save = useCallback(async () => {
+    if (!groupId) return;
+    const groupStudents = studentsByGroup[groupId] || [];
+    const final = {};
+    groupStudents.forEach((st) => { final[st.id] = marks[st.id] || 'Absent'; });
+    setSheet(false);
+    await saveAttendance({ groupId, type, date: new Date(date).toISOString(), attendance: final, duration: 1.0 });
+  }, [groupId, studentsByGroup, marks, saveAttendance, type, date]);
+
+  const detailEvent = detailEventId ? events.find((e) => e.id === detailEventId) : null;
+  const detailGroup = detailEvent ? groupById[detailEvent.groupId] : null;
+  const detailRecs = detailEvent ? (attendanceByEvent[detailEvent.id] || []) : [];
+  const detailGroupStudents = detailEvent ? (studentsByGroup[detailEvent.groupId] || []) : [];
+  const detailRecByStudent = useMemo(() => Object.fromEntries(detailRecs.map((r) => [r.studentId, r])), [detailRecs]);
+  const detailPresent = detailRecs.filter((r) => r.status === 'Present').length;
+
+  const closeDetail = useCallback(() => setDetailEventId(null), []);
+  const handleDelete = useCallback(() => {
+    if (!detailEventId) return;
+    const id = detailEventId;
+    confirm('Termin löschen?', 'Dieser Termin wird unwiderruflich gelöscht.', () => {
+      setDetailEventId(null);
+      deleteEvent(id);
+    });
+  }, [detailEventId, deleteEvent]);
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100, gap: 10 }} removeClippedSubviews>
+        {sortedEvents.length === 0 ? <EmptyState emoji="📋" title="Keine Termine" subtitle="Erstelle deinen ersten Termin" /> : sortedEvents.map((e) => {
+          const group = groupById[e.groupId];
+          const totalGroupSize = (studentsByGroup[e.groupId] || []).length;
+          const recs = attendanceByEvent[e.id] || [];
+          const presentCount = recs.filter((r) => r.status === 'Present').length;
+          return (
+            <EventCard
+              key={e.id}
+              ev={e}
+              group={group}
+              eventType={eventTypeMap[e.type]}
+              presentCount={presentCount}
+              totalGroupSize={totalGroupSize}
+              onPress={() => setDetailEventId(e.id)}
+            />
+          );
+        })}
+      </ScrollView>
+      <View style={{ position: 'absolute', bottom: 20, left: 20, right: 20 }}>
+        <Btn title="+ Neuer Termin" onPress={open} testID="new-attendance-btn" disabled={groups.length === 0} />
+      </View>
+
+      {/* New attendance entry sheet */}
+      <Sheet visible={sheet} onClose={() => setSheet(false)} title="Anwesenheit eintragen">
+        <View style={{ gap: 10 }}>
+          <Text style={s.lbl}>Typ</Text>
+          <View style={{ flexDirection: 'row' }}>
+            {EVENT_TYPES.map((t) => <Chip key={t.key} label={`${t.emoji} ${t.label}`} active={type === t.key} onPress={() => setType(t.key)} />)}
+          </View>
+          <Text style={s.lbl}>Gruppe</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {groups.map((g) => <Chip key={g.id} label={g.name} active={groupId === g.id} onPress={() => setGroupId(g.id)} color={g.color} />)}
+          </View>
+          <Text style={s.lbl}>Datum (YYYY-MM-DD)</Text>
+          <Input testID="attendance-date" value={date} onChangeText={setDate} />
+          <Text style={s.lbl}>Schüler</Text>
+          {(studentsByGroup[groupId] || []).map((st) => {
+            const cur = marks[st.id] || 'Present';
+            const stat = STATUS_MAP[cur];
+            return (
+              <TouchableOpacity key={st.id} onPress={() => cycle(st.id)} testID={`mark-${st.id}`} style={s.row}>
+                <Avatar name={st.name} photo={st.photoUrl} size={36} />
+                <Text style={{ flex: 1, marginLeft: 10, color: theme.text, fontFamily: fonts.body }}>{st.name}</Text>
+                <View style={[s.status, { backgroundColor: stat.color + '22' }]}>
+                  <Text style={{ fontSize: 16 }}>{stat.emoji}</Text>
+                  <Text style={{ color: stat.color, fontFamily: fonts.bodyBold, fontSize: 12, marginLeft: 4 }}>{stat.label}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+          <Btn testID="attendance-save-btn" title="Speichern" onPress={save} />
+        </View>
+      </Sheet>
+
+      {/* Detail sheet for tracked event */}
+      <Sheet visible={!!detailEvent} onClose={closeDetail} title={detailGroup ? `${detailGroup.name}` : 'Termin'}>
+        {detailEvent ? (
+          <View style={{ gap: 10 }}>
+            <Text style={s.sub}>
+              {eventTypeMap[detailEvent.type]?.emoji} {eventTypeMap[detailEvent.type]?.label} • {new Date(detailEvent.date).toLocaleDateString('de-DE')}
+            </Text>
+            <View style={s.detailStat}>
+              <Text style={[s.detailStatNum, { fontFamily: fonts.heading }]}>{detailPresent}/{detailGroupStudents.length}</Text>
+              <Text style={s.detailStatLbl}>anwesend</Text>
+            </View>
+
+            {detailGroupStudents.length === 0 ? (
+              <EmptyState emoji="👥" title="Keine Schüler" subtitle="Diese Gruppe ist leer" />
+            ) : (
+              detailGroupStudents.map((st) => {
+                const rec = detailRecByStudent[st.id];
+                const statKey = rec?.status || 'Absent';
+                const stat = STATUS_MAP[statKey];
+                return (
+                  <View key={st.id} style={s.row}>
+                    <Avatar name={st.name} photo={st.photoUrl} size={36} />
+                    <Text style={{ flex: 1, marginLeft: 10, color: theme.text, fontFamily: fonts.body }}>{st.name}</Text>
+                    <View style={[s.status, { backgroundColor: stat.color + '22' }]}>
+                      <Text style={{ fontSize: 16 }}>{stat.emoji}</Text>
+                      <Text style={{ color: stat.color, fontFamily: fonts.bodyBold, fontSize: 12, marginLeft: 4 }}>{stat.label}</Text>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+
+            <View style={{ marginTop: 8 }}>
+              <Btn title="🗑️  Termin löschen" variant="ghost" onPress={handleDelete} testID="delete-event-btn" />
+            </View>
+          </View>
+        ) : null}
+      </Sheet>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  title: { fontSize: 16, color: theme.text },
+  sub: { fontSize: 12, color: theme.mutedText, marginTop: 2, fontFamily: 'DMSans_400Regular' },
+  lbl: { fontSize: 13, color: theme.mutedText, fontFamily: 'DMSans_700Bold', marginTop: 6 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  status: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12 },
+  detailStat: { backgroundColor: theme.bg, borderRadius: 14, padding: 14, alignItems: 'center', marginVertical: 6 },
+  detailStatNum: { fontSize: 28, color: theme.primary },
+  detailStatLbl: { fontSize: 12, color: theme.mutedText, fontFamily: 'DMSans_400Regular', marginTop: 2 },
+});

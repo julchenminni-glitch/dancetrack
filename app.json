@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "DanceTrack",
+    "slug": "frontend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/DanceTrackIcon.png",
+    "scheme": "DanceTrack",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/DanceTrackIcon.png",
+        "backgroundColor": "#ffd6e7"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.juuul.dancetrack"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+        "favicon": "./assets/DanceTrackIcon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/DanceTrackIcon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffd6e7"
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "07ced3b6-ef41-4a34-a2de-5458245967a9"
+      }
+    }
+  }
+}
