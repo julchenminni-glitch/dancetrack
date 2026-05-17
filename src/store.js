@@ -148,17 +148,17 @@ export const AppProvider = ({ children }) => {
   const addStudent = async (body) => {
     await api.post(`/workspaces/${workspaceId}/students`, body);
     await loadAll();
-    showToast('Schüler hinzugefügt');
+    showToast('Mitglied hinzugefügt');
   };
   const editStudent = async (id, body) => {
     await api.patch(`/workspaces/${workspaceId}/students/${id}`, body);
     await loadAll();
-    showToast('Schüler aktualisiert');
+    showToast('Mitglied aktualisiert');
   };
   const deleteStudent = async (id) => {
     await api.delete(`/workspaces/${workspaceId}/students/${id}`);
     await loadAll();
-    showToast('Schüler gelöscht');
+    showToast('Mitglied gelöscht');
   };
 
   const saveAttendance = async (body) => {
@@ -247,4 +247,4 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-export const useApp = () => /** @type {any} */ (useContext(Ctx)); 
+export const useApp = () => useContext(Ctx);

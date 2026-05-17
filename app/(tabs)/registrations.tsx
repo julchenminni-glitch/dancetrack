@@ -21,9 +21,9 @@ export default function Registrations() {
         <Text style={{ color: theme.mutedText, fontFamily: fonts.body }}>Bereits angemeldet</Text>
       </Card>
       {students.length === 0 ? (
-        <EmptyState emoji="✅" title="Keine Schüler" />
+        <EmptyState emoji="✅" title="Keine Mitglieder" />
       ) : pending.length === 0 ? (
-        <EmptyState emoji="🎉" title="Alle angemeldet" subtitle="Alle Schüler sind eingetragen" />
+        <EmptyState emoji="🎉" title="Alle angemeldet" subtitle="Alle Mitglieder sind eingetragen" />
       ) : (
         pending.map((st) => {
           const grp = groupById[st.groupId];

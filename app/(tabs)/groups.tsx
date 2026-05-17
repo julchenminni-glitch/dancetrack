@@ -11,7 +11,7 @@ import { confirm } from '../../src/confirm';
 const empty = { name: '', weekday: 'Montag', time: '16:00', color: GROUP_COLORS[0], rewardSystemEnabled: true };
 
 // Memoized group card to limit re-renders
-const GroupCard = memo(function GroupCard({ g, memberCount, quote, onOpenMembers, onEdit, onPdf }) {
+const GroupCard = memo(function GroupCard({ g, memberCount, quote, onOpenMembers, onEdit, onPdf }: { g: any; memberCount: number; quote: number; onOpenMembers: () => void; onEdit: () => void; onPdf: () => void }) {
   return (
     <Card style={{ gap: 8 }} testID={`group-card-${g.id}`}>
       <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }} onPress={onOpenMembers} testID={`open-members-${g.id}`}>
@@ -19,7 +19,7 @@ const GroupCard = memo(function GroupCard({ g, memberCount, quote, onOpenMembers
         <View style={{ flex: 1 }}>
           <Text style={[s.gName, { fontFamily: fonts.heading }]}>{g.name}</Text>
           <Text style={s.gSub}>{g.weekday} • {g.time}</Text>
-          <Text style={s.gSub}>{memberCount} Schüler • {quote}% Anwesend</Text>
+          <Text style={s.gSub}>{memberCount} Mitglieder • {quote}% Anwesend</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <TouchableOpacity onPress={onPdf} style={s.iconBtn} testID={`export-pdf-${g.id}`} hitSlop={6}>
@@ -88,7 +88,7 @@ export default function Groups() {
   }, [form, editId, editGroup, addGroup]);
 
   const del = useCallback((g) => {
-    confirm('Gruppe löschen?', `"${g.name}" und alle zugehörigen Schüler werden gelöscht.`, () => {
+    confirm('Gruppe löschen?', `"${g.name}" und alle zugehörigen Mitglieder werden gelöscht.`, () => {
       deleteGroup(g.id); setSheet(false);
     });
   }, [deleteGroup]);
@@ -98,7 +98,7 @@ export default function Groups() {
     const escapeHtml = (str) => String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const today = new Date().toLocaleDateString('de-DE');
     const rowsHtml = members.length === 0
-      ? `<tr><td colspan="7" style="text-align:center;color:#999;padding:20px">Keine Schüler in dieser Gruppe</td></tr>`
+      ? `<tr><td colspan="7" style="text-align:center;color:#999;padding:20px">Keine Mitglieder in dieser Gruppe</td></tr>`
       : members.map((st, i) => {
           const count = attendanceCountByStudent[st.id] || 0;
           const lvl = getCurrentLevel(count, rewardLevels);
@@ -138,7 +138,7 @@ export default function Groups() {
         </div>
       </div>
       <div class="stats">
-        <div class="stat"><div class="v">${members.length}</div><div class="l">Schüler</div></div>
+        <div class="stat"><div class="v">${members.length}</div><div class="l">Mitglieder</div></div>
         <div class="stat"><div class="v">${quote}%</div><div class="l">Anwesenheit</div></div>
         <div class="stat"><div class="v">${members.filter((m) => m.isRegistered).length}/${members.length}</div><div class="l">Angemeldet</div></div>
       </div>
@@ -187,7 +187,7 @@ export default function Groups() {
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100, gap: 12 }} removeClippedSubviews>
         {groups.length === 0 ? (
-          <EmptyState emoji="👯" title="Keine Gruppen" subtitle="Erstelle deine erste Tanzgruppe" />
+          <EmptyState emoji="💔" title="Keine Gruppen" subtitle="Erstelle deine erste Tanzgruppe" />
         ) : groups.map((g) => (
           <GroupCard
             key={g.id}
@@ -216,7 +216,7 @@ export default function Groups() {
               </View>
             </View>
             {membersList.length === 0 ? (
-              <EmptyState emoji="👥" title="Keine Schüler" subtitle="Diese Gruppe hat noch keine Mitglieder" />
+              <EmptyState emoji="💔" title="Keine Mitglieder" subtitle="In dieser Gruppe tanzt noch keiner!" />
             ) : membersList.map((st) => {
               const count = attendanceCountByStudent[st.id] || 0;
               const lvl = getCurrentLevel(count, rewardLevels);

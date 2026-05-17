@@ -185,7 +185,7 @@ frontend:
           comment: "Filtered to !isRegistered. Tap marks as registered and removes from list. Counter shows registered/total."
         - working: true
           agent: "testing"
-          comment: "Header card shows '1/1 Bereits angemeldet'. Since all students are already registered, the empty state '🎉 Alle angemeldet' with subtitle 'Alle Schüler sind eingetragen' is correctly displayed. No checkmark column visible. Tap-to-mark logic could not be exercised because no pending students exist (covered by empty state)."
+          comment: "Header card shows '1/1 Bereits angemeldet'. Since all students are already registered, the empty state '🎉 Alle angemeldet' with subtitle 'Alle Mitglieder sind eingetragen' is correctly displayed. No checkmark column visible. Tap-to-mark logic could not be exercised because no pending students exist (covered by empty state)."
   - task: "Performance: memoize derived data per tab"
     implemented: true
     working: true
@@ -199,7 +199,7 @@ frontend:
           comment: "Built indices and memoized list cards."
         - working: true
           agent: "testing"
-          comment: "Tab smoke navigated through all 6 tabs (Übersicht→Gruppen→Schüler→Anwesenheit→Anmeldungen→Einstellungen) without errors or crashes. UI feels responsive."
+          comment: "Tab smoke navigated through all 6 tabs (Übersicht→Gruppen→Mitglieder→Anwesenheit→Anmeldungen→Einstellungen) without errors or crashes. UI feels responsive."
   - task: "Settings: editable reward levels (incl. defaults) with Phase chip"
     implemented: true
     working: true

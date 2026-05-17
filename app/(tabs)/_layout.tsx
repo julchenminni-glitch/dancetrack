@@ -7,12 +7,13 @@ import { theme, fonts } from '../../src/theme';
 
 const TABS = [
   { key: 'overview', label: 'Übersicht', icon: '🏠' },
-  { key: 'groups', label: 'Gruppen', icon: '👯' },
-  { key: 'students', label: 'Schüler', icon: '👥' },
+  { key: 'groups', label: 'Gruppen', icon: '🪇' },
+  { key: 'students', label: 'Mitglieder', icon: '👯' },
   { key: 'attendance', label: 'Anwesenheit', icon: '📋' },
   { key: 'registrations', label: 'Anmeldungen', icon: '✅' },
   { key: 'work-hours', label: 'Stunden', icon: '📅' },
   { key: 'awards', label: 'Awards', icon: '🏆' },
+  { key: 'choreos', label: 'Choreos', icon: '💡' },
   { key: 'settings', label: 'Einstellungen', icon: '⚙️' },
 ];
 
@@ -42,7 +43,7 @@ const groupsToday = groups.filter((g: any) => g.weekday === WD[weekdayIdx]);
       <View style={s.header}>
         <TouchableOpacity onPress={() => setWorkspaceId(null)} testID="switch-workspace-btn">
           <Text style={[s.wsName, { fontFamily: fonts.heading }]} numberOfLines={1}>{currentWorkspace?.name || 'DanceTrack'}</Text>
-          <Text style={[s.wsTrainer, { fontFamily: fonts.body }]}>👤 {currentWorkspace?.trainerName}</Text>
+          <Text style={[s.wsTrainer, { fontFamily: fonts.body }]}>🪄 {currentWorkspace?.trainerName}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setBellOpen(!bellOpen)} style={s.bell} testID="bell-btn">
           <Text style={{ fontSize: 22 }}>🔔</Text>

@@ -143,7 +143,7 @@ export default function Students() {
         <Chip label="🏆 Level" active={sortBy === 'level'} onPress={() => setSortBy('level')} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100, gap: 10 }}>
-        {sorted.length === 0 ? <EmptyState emoji="👥" title="Keine Schüler" subtitle="Füge Schüler zu deinen Gruppen hinzu" /> : sorted.map((st) => {
+        {sorted.length === 0 ? <EmptyState emoji="💔" title="Keine Mitglieder" subtitle="Füge Mitglieder zu deinen Gruppen hinzu" /> : sorted.map((st) => {
           const count = studentCount(st.id);
           const lvl = getCurrentLevel(count, rewardLevels);
           const grp = groups.find((g) => g.id === st.groupId);
@@ -165,7 +165,7 @@ export default function Students() {
           );
         })}
       </ScrollView>
-      <View style={s.fab}><Btn title="+ Neuer Schüler" onPress={openNew} testID="add-student-btn" /></View>
+      <View style={s.fab}><Btn title="+ Neue Mitglieder" onPress={openNew} testID="add-student-btn" /></View>
 
       {/* Detail Sheet */}
       <Sheet visible={!!detail} onClose={() => setDetail(null)} title={detail?.name || ''}>
@@ -204,7 +204,7 @@ export default function Students() {
       </Sheet>
 
       {/* Edit/New Sheet */}
-      <Sheet visible={sheet} onClose={() => setSheet(false)} title={editId ? 'Schüler bearbeiten' : 'Neuer Schüler'}>        <View style={{ gap: 10 }}>
+      <Sheet visible={sheet} onClose={() => setSheet(false)} title={editId ? 'Mitglied bearbeiten' : 'Neues Mitglied'}>        <View style={{ gap: 10 }}>
           <View style={{ alignItems: 'center', gap: 8 }}>
             <TouchableOpacity onPress={pickImage} testID="photo-pick-btn">
               {form.photoUrl ? <Image source={{ uri: form.photoUrl }} style={{ width: 96, height: 96, borderRadius: 48 }} /> : (

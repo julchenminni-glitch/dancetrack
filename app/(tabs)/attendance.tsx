@@ -6,9 +6,9 @@ import { Btn, Input, Sheet, Card, Chip, EmptyState, Avatar } from '../../src/ui'
 import { confirm } from '../../src/confirm';
 
 const STATUS = [
-  { key: 'Present', label: 'Anwesend', emoji: '🪩', color: '#5b8a72' },
-  { key: 'Excused', label: 'Entschuldigt', emoji: '🌴', color: '#c4883a' },
-  { key: 'Absent', label: 'Fehlend', emoji: '👻', color: '#d4719d' },
+  { key: 'Present', label: 'Anwesend', emoji: '🪩', color: '#bffcc6' },
+  { key: 'Excused', label: 'Entschuldigt', emoji: '🌴', color: '#fff5ba' },
+  { key: 'Absent', label: 'Fehlend', emoji: '👻', color: '#ffabab' },
 ];
 type StatusKey = 'Present' | 'Excused' | 'Absent';
 const STATUS_MAP: Record<StatusKey, typeof STATUS[0]> = { Present: STATUS[0], Excused: STATUS[1], Absent: STATUS[2] };
@@ -165,7 +165,7 @@ export default function Attendance() {
             keyboardType="default"
             secureTextEntry={false}
           />
-          <Text style={s.lbl}>Schüler</Text>
+          <Text style={s.lbl}>Mitglieder</Text>
           {(studentsByGroup[groupId] || []).map((st) => {
             const cur: StatusKey = (marks[st.id] || 'Present') as StatusKey;
             const stat = STATUS_MAP[cur];
@@ -197,7 +197,7 @@ export default function Attendance() {
             </View>
 
             {detailGroupStudents.length === 0 ? (
-              <EmptyState emoji="👥" title="Keine Schüler" subtitle="Diese Gruppe ist leer" />
+              <EmptyState emoji="💔" title="Keine Mitglieder" subtitle="Diese Gruppe ist leer" />
             ) : (
               detailGroupStudents.map((st) => {
                 const rec = detailRecByStudent[st.id];

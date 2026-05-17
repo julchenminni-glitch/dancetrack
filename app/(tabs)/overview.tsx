@@ -78,20 +78,20 @@ export default function Overview() {
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }} removeClippedSubviews>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/groups')} testID="stat-groups-btn">
-          <Card style={s.stat}><Text style={s.statEmoji}>👯</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{groups.length}</Text><Text style={s.statLabel}>Gruppen</Text></Card>
+          <Card style={s.stat}><Text style={s.statEmoji}>🪇</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{groups.length}</Text><Text style={s.statLabel}>Gruppen</Text></Card>
         </TouchableOpacity>
         <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/students')} testID="stat-students-btn">
-          <Card style={s.stat}><Text style={s.statEmoji}>👥</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{students.length}</Text><Text style={s.statLabel}>Schüler</Text></Card>
+          <Card style={s.stat}><Text style={s.statEmoji}>👯</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{students.length}</Text><Text style={s.statLabel}>Mitglieder</Text></Card>
         </TouchableOpacity>
         <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/work-hours')} testID="stat-hours-btn">
-          <Card style={s.stat}><Text style={s.statEmoji}>💼</Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{totalHours.toFixed(1)}</Text><Text style={s.statLabel}>Stunden</Text></Card>
+          <Card style={s.stat}>📋<Text style={s.statEmoji}></Text><Text style={[s.statNum, { fontFamily: fonts.heading }]}>{totalHours.toFixed(1)}</Text><Text style={s.statLabel}>Stunden</Text></Card>
         </TouchableOpacity>
       </View>
 
       <Card>
-        <Text style={[s.sectionTitle, { fontFamily: fonts.heading }]}>🎯 Level-Up wartet</Text>
+        <Text style={[s.sectionTitle, { fontFamily: fonts.heading }]}>🏵️ Level-Up wartet</Text>
         {nextLevelUps.length === 0 ? (
-          <Text style={s.muted}>Keine Schüler kurz vor einem Level-Up</Text>
+          <Text style={s.muted}>Keine Mitglieder kurz vor einem Level-Up</Text>
         ) : nextLevelUps.slice(0, 5).map(({ student, next, current }) => (
           <TouchableOpacity key={student.id} style={s.lvlRow} onPress={() => goStudent(student.id)}>
             <Text style={{ fontSize: 20 }}>{current?.emoji || '🌱'}</Text>
@@ -105,7 +105,7 @@ export default function Overview() {
 
       <Card>
         <Text style={[s.sectionTitle, { fontFamily: fonts.heading }]}>🏆 Top Achievers</Text>
-        {topAchievers.length === 0 ? <Text style={s.muted}>Noch keine Schüler</Text> : topAchievers.map(({ st, count, lvl }, i) => (
+        {topAchievers.length === 0 ? <Text style={s.muted}>Noch keine Mitglieder</Text> : topAchievers.map(({ st, count, lvl }, i) => (
           <TouchableOpacity key={st.id} style={s.lvlRow} onPress={() => goStudent(st.id)} testID={`achiever-${st.id}`}>
             <Text style={{ fontSize: 18 }}>{['🥇', '🥈', '🥉'][i]}</Text>
             <Text style={[s.lvlName, { fontFamily: fonts.bodyBold }]}>{st.name}</Text>
@@ -118,7 +118,7 @@ export default function Overview() {
       <Card>
         <Text style={[s.sectionTitle, { fontFamily: fonts.heading }]}>📅 Diese Woche</Text>
         {groups.length === 0 ? (
-          <EmptyState emoji="🎭" title="Noch keine Gruppen" subtitle="Erstelle deine erste Tanzgruppe" />
+          <EmptyState emoji="💔" title="Noch keine Gruppen" subtitle="Erstelle deine erste Tanzgruppe" />
         ) : WEEKDAYS.map((wd) => {
           const gs = groupsByDay[wd];
           if (!gs || gs.length === 0) return null;

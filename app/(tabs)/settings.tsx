@@ -89,7 +89,7 @@ export default function Settings() {
   const handleReset = () => {
     confirm(
       'Alle Daten löschen?',
-      'Schüler, Gruppen, Anwesenheit und Stunden werden unwiderruflich entfernt.',
+      'Mitglieder, Gruppen, Anwesenheit und Stunden werden unwiderruflich entfernt.',
       async () => {
         await resetDb();
         if (Platform.OS === 'web' && typeof window !== 'undefined') {

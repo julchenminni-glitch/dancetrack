@@ -21,10 +21,10 @@ export const fonts = {
 export const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 export const EVENT_TYPES = [
   { key: 'Training', label: 'Training', emoji: '💃' },
-  { key: 'Performance', label: 'Auftritt', emoji: '🎭' },
-  { key: 'Event', label: 'Event', emoji: '🎉' },
+  { key: 'Performance', label: 'Event', emoji: '🎉' },
+  
 ];
-export const GROUP_COLORS = ['#d4719d', '#c9a8d4', '#5b8a72', '#7b6ba5', '#c4883a', '#e48fae', '#8bb8a0', '#a491c9'];
+export const GROUP_COLORS = ['#faebcb', '#c9e4de', '#c6def1', '#dbcdf0', '#f2c6de', '#f7d9c4', '#ffabab', '#a491c9'];
 
 export const DEFAULT_LEVELS = [
   { name: 'Samen', emoji: '🌱', threshold: 0 },
