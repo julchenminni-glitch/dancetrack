@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api, setToken, storage, initLocalDb } from './api';
 
-const Ctx = createContext(null);
+const Ctx = createContext({});
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -247,4 +247,4 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-export const useApp = () => useContext(Ctx);
+export const useApp = () => /** @type {any} */ (useContext(Ctx)); 

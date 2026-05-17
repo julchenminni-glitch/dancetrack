@@ -19,7 +19,11 @@ const TABS = [
 export default function TabsLayout() {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentWorkspace, groups, events, setWorkspaceId } = useApp();
+  const appState = useApp() as any;
+  const currentWorkspace = appState?.currentWorkspace;
+  const groups = appState?.groups || [];
+  const events = appState?.events || [];
+  const setWorkspaceId = appState?.setWorkspaceId;
   const [bellOpen, setBellOpen] = useState(false);
 
   const active = TABS.find((t) => pathname.includes(t.key))?.key || 'overview';
@@ -29,9 +33,10 @@ export default function TabsLayout() {
   const weekdayIdx = (today.getDay() + 6) % 7; // 0 = Monday
   const WD = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
   const todayStr = today.toISOString().slice(0, 10);
-  const groupsToday = groups.filter((g) => g.weekday === WD[weekdayIdx]);
-  const missingGroups = groupsToday.filter((g) => !events.some((e) => e.groupId === g.id && e.date.slice(0, 10) === todayStr));
+const groupsToday = groups.filter((g: any) => g.weekday === WD[weekdayIdx]);
+  const missingGroups = groupsToday.filter((g: any) => !events.some((e: any) => e.groupId === g.id && e.date.slice(0, 10) === todayStr));
 
+  
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
       <View style={s.header}>
@@ -53,7 +58,7 @@ export default function TabsLayout() {
           {missingGroups.length === 0 ? (
             <Text style={{ color: theme.mutedText, fontFamily: fonts.body }}>Alles erledigt! 🎉</Text>
           ) : (
-            missingGroups.map((g) => (
+          missingGroups.map((g: any) => (
               <TouchableOpacity
                 key={g.id}
                 onPress={() => { setBellOpen(false); router.push('/(tabs)/attendance'); }}
@@ -74,8 +79,7 @@ export default function TabsLayout() {
           <TouchableOpacity
             key={t.key}
             testID={`tab-${t.key}`}
-            onPress={() => router.replace(`/(tabs)/${t.key}`)}
-            style={[s.tab, active === t.key && s.tabActive]}
+           onPress={() => router.replace(`/(tabs)/${t.key}` as any)}            style={[s.tab, active === t.key && s.tabActive]}
           >
             <Text style={{ fontSize: 14, marginRight: 6 }}>{t.icon}</Text>
             <Text style={[s.tabLabel, { fontFamily: fonts.bodyBold }, active === t.key && { color: theme.primary }]}>{t.label}</Text>

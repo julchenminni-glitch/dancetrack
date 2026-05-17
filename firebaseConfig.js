@@ -16,6 +16,6 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-console.log("CONFIG DB TEST:", db);
+
 
 export default app;
